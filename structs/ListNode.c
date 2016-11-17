@@ -35,17 +35,7 @@ ListNode* NewListNode(void* value)
   node->insertBefore = insertBeforeImpl;
   node->insertAfter = insertAfterImpl;
   node->value = value;
-
-  return node;
-}
-
-ListNode* NewListNode(void* key, void* value)
-{
-  ListNode* node = (ListNode*)malloc(sizeof(ListNode));
-  node->insertBefore = insertBeforeImpl;
-  node->insertAfter = insertAfterImpl;
-  node->value = value;
-  node->key = key;
-
+  node->nextNode = NULL;
+  node->prevNode = NULL;
   return node;
 }

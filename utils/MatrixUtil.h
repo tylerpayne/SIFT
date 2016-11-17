@@ -1,43 +1,37 @@
 #include <stdlib.h>
+#include "Matrix.h"
 
-#include <stdlib.h>
-
-typedef struct sMatrix
-{
-  int* shape;
-  void* nativePtr;
-
-} Matrix;
-
-typedef void (*m1m2Func)(Matrix *, Matrix *);
-typedef void (*m1Func)(Matrix *);
-typedef void (*m1fFunc)(Matrix *, float);
+typedef Matrix* (*m1m2rFunc)(Matrix *, Matrix *);
+typedef int (*m1m2Func)(Matrix *, Matrix *);
+typedef Matrix* (*m1Func)(Matrix *);
+typedef Matrix* (*m1fFunc)(Matrix *, float);
 typedef Matrix* (*mrFunc)(Matrix*);
+typedef Matrix* (*newMatrixFunc)(int,int);
+typedef Matrix* (*newMatrixWithFloatFunc)(float*,int,int);
 
-typedef struct sMatrixUtil
+typedef struct MatrixUtil MatrixUtil;
+
+struct MatrixUtil
 {
-  m1m2Func add;
-  m1m2Func multiply;
-  m1m2Func divide;
+  newMatrixFunc newEmptyMatrix;
+  newMatrixWithFloatFunc newMatrix;
+  m1m2rFunc add;
+  m1m2rFunc multiply;
+  m1m2rFunc divide;
   m1Func sqrt;
   m1m2Func isEqual;
   m1Func arctan;
-  m1Func arctan2;
   m1Func exp;
   m1Func log;
   m1fFunc pow;
-  m1fFunc ceil;
-  m1fFunc floor;
+  m1Func ceil;
+  m1Func floor;
   m1Func abs;
-  m1fFunc mod;
   mrFunc transpose;
-  m1m2Func dot;
-  m1m2Func cross;
+  m1m2rFunc dot;
+  m1m2rFunc cross;
   mrFunc inv;
-  
-} MatrixUtil;
-
-Matrix* NewMatrix(float* f, int* shape);
+};
 
 MatrixUtil* GetCUDAMatrixUtil();
 MatrixUtil* GetPrimitiveMatrixUtil();

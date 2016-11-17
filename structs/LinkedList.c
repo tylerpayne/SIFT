@@ -4,36 +4,26 @@ ListNode* getImpl(LinkedList* self, int idx)
 {
   if (idx < self->count)
   {
-    if (idx <= self->count/2)
+    int i = 0;
+    ListNode* u = self->firstNode;
+    if (u->nextNode != NULL)
     {
-      int i = 0;
-      ListNode* u = self->firstNode;
       while (i != idx)
       {
         u=u->nextNode;
-        i++
+        i++;
       }
-      return u;
-    } else
-    {
-      int i = self->count;
-      ListNode* u = self->lastNode;
-      while (i != idx)
-      {
-        u=u->prevNode;
-        i--
-      }
-      return u;
     }
+    return u;
   } else
   {
-      return NULL;
+    return NULL;
   }
 }
 
 void removeImpl(LinkedList* self, int idx)
 {
-  ListNode* remnode = self->get(idx);
+  ListNode* remnode = self->get(self,idx);
   if (remnode->nextNode != NULL)
   {
     if (remnode->prevNode != NULL)
@@ -62,7 +52,7 @@ void removeImpl(LinkedList* self, int idx)
 
 ListNode* popImpl(LinkedList* self, int idx)
 {
-  ListNode* remnode = self->get(idx);
+  ListNode* remnode = self->get(self,idx);
   if (remnode->nextNode != NULL)
   {
     if (remnode->prevNode != NULL)
@@ -75,9 +65,7 @@ ListNode* popImpl(LinkedList* self, int idx)
     }
   } else
   {
-    if (remnode->prevNode == NULL)
-    {
-    } else
+    if (remnode->prevNode != NULL)
     {
       remnode->prevNode->nextNode = NULL;
     }
@@ -98,6 +86,7 @@ void appendImpl(LinkedList* self, ListNode* node)
       self->lastNode->nextNode = node;
       node->prevNode = self->lastNode;
       self->lastNode = node;
+      self->count++;
     }
 }
 
@@ -105,11 +94,22 @@ void insertImpl(LinkedList *self, ListNode* node, int idx)
 {
   if (idx < self->count)
   {
-    ListNode *currentNode = getImpl(self,idx);
-    currentNode->prevNode->nextNode = node;
-    node->prevNode = currentNode->prevNode;
-    currentNode->prevNode = node;
-    node->nextNode = currentNode;
+    ListNode* insertBefore = self->get(self,idx);
+    if (insertBefore->prevNode != NULL)
+    {
+      insertBefore->prevNode->nextNode = node;
+      node->prevNode = insertBefore->prevNode;
+    }
+    insertBefore->prevNode = node;
+    node->nextNode = insertBefore;
+    if (idx==0)
+    {
+      self->firstNode = node;
+    }
+    self->count++;
+  } else
+  {
+    self->append(self,node);
   }
 }
 
@@ -123,5 +123,7 @@ LinkedList* NewLinkedList()
   list->pop = popImpl;
   list->insert = insertImpl;
   list->append = appendImpl;
+  list->firstNode = NULL;
+  list->lastNode = NULL;
   return list;
 }

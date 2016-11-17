@@ -1,24 +1,28 @@
-#include "LinkedList.h"
+#include "PriorityQ.h"
 
 void enQImpl(PriorityQ* self, ListNode* node, float priority)
 {
-  node->key = (void*) &priority;
-  if (self->list->firstNode == null)
+  node->key.fval = priority;
+  if (self->list->count == 0)
   {
     self->list->append(self->list,node);
   } else
   {
     ListNode* u = self->list->firstNode;
     int i = 0;
-    float ukey = *(float*)u->key;
-    while (ukey < priority && u->nextNode != NULL)
+    while (u->key.fval < priority)
     {
+      if (u->nextNode == NULL)
+      {
+        i++;
+        break;
+      }
       u = u->nextNode;
-      ukey = *(float*)u->key;
       i++;
     }
-    u->list->insert(u->list,node,idx);
+    self->list->insert(self->list,node,i);
   }
+
 }
 
 ListNode* deQImpl(PriorityQ* self)
@@ -37,7 +41,8 @@ ListNode* deQImpl(PriorityQ* self)
 PriorityQ* NewPriorityQ()
 {
   PriorityQ* pq = (PriorityQ*)malloc(sizeof(PriorityQ));
-  pq.enQ = enQImpl;
-  pq.deQ = deQImpl;
+  pq->enQ = enQImpl;
+  pq->deQ = deQImpl;
+  pq->list = NewLinkedList();
   return pq;
 }

@@ -1,16 +1,21 @@
 #include <stdlib.h>
 
-typedef void (* insertFunc)(ListNode* self, ListNode* n);
+typedef struct ListNode ListNode;
 
-typedef struct sListNode
+typedef void (* insertHereFunc)(ListNode* self, ListNode* n);
+
+struct ListNode
 {
   void* value;
-  void* key;
+  union {
+    int ival;
+    float fval;
+    char* sval;
+  } key;
   ListNode* nextNode;
   ListNode* prevNode;
-  insert insertBefore;
-  insert insertAfter;
-} ListNode;
+  insertHereFunc insertBefore;
+  insertHereFunc insertAfter;
+};
 
 ListNode* NewListNode(void* value);
-ListNode* NewListNode(void* value, void* key);

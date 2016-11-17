@@ -1,14 +1,16 @@
 #include <stdlib.h>
-#include "LinkedList.h"
+#include "LinkedList.c"
+
+typedef struct PriorityQ PriorityQ;
 
 typedef void (*enqFunc)(PriorityQ* self, ListNode *, float);
-typedef ListNode* (PriorityQ* self, *deqFunc)();
+typedef ListNode* (*deqFunc)(PriorityQ* self);
 
-typedef struct sPriorityQ
+struct PriorityQ
 {
   LinkedList* list;
   enqFunc enQ;
   deqFunc deQ;
-} PriorityQ;
+};
 
 PriorityQ* NewPriorityQ();

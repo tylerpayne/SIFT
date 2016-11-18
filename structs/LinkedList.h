@@ -1,24 +1,27 @@
 #include <stdlib.h>
 #include "ListNode.c"
 
-typedef struct LinkedList LinkedList;
+typedef struct List List;
 
-typedef void (*appendFunc)(LinkedList*,ListNode*);
-typedef void (*insertFunc)(LinkedList*, ListNode*, int);
-typedef void (*removeFunc)(LinkedList*,int);
-typedef ListNode* (*getFunc)(LinkedList*, int);
-typedef ListNode* (*popFunc)(LinkedList*, int);
+typedef void (*vlllnFunc)(List*,ListNode*);
+typedef void (*vlllniFunc)(List*, ListNode*, int);
+typedef void (*vlliFunc)(List*,int);
+typedef ListNode* (*lllliFunc)(List*, int);
+typedef ListNode* (*llllfFunc)(List*, float);
 
-struct LinkedList
+struct List
 {
   ListNode* firstNode;
   ListNode* lastNode;
-  appendFunc append;
-  insertFunc insert;
-  removeFunc remove;
-  popFunc pop;
-  getFunc get;
+  vlllnFunc append;
+  vlllniFunc insert;
+  vlliFunc remove;
+  lllliFunc pop;
+  lllliFunc get;
+  llllfFunc binarySearch;
   int count;
+  float* keyArray;
+  ListNode* nodePtrArray;
 };
 
-LinkedList* NewLinkedList();
+List* NewList();

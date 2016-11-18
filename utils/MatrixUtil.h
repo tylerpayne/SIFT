@@ -8,6 +8,7 @@ typedef Matrix* (*m1fFunc)(Matrix *, float);
 typedef Matrix* (*mrFunc)(Matrix*);
 typedef Matrix* (*newMatrixFunc)(int,int);
 typedef Matrix* (*newMatrixWithFloatFunc)(float*,int,int);
+typedef void (*prettyPrintFunc)(Matrix*);
 
 typedef struct MatrixUtil MatrixUtil;
 
@@ -16,8 +17,11 @@ struct MatrixUtil
   newMatrixFunc newEmptyMatrix;
   newMatrixWithFloatFunc newMatrix;
   m1m2rFunc add;
+  m1m2rFunc subtract;
   m1m2rFunc multiply;
+  m1fFunc multiplyConst;
   m1m2rFunc divide;
+  m1fFunc divideConst;
   m1Func sqrt;
   m1m2Func isEqual;
   m1Func arctan;
@@ -31,6 +35,9 @@ struct MatrixUtil
   m1m2rFunc dot;
   m1m2rFunc cross;
   mrFunc inv;
+  m1m2rFunc solve;
+  m1m2rFunc lstsq;
+  prettyPrintFunc pprint;
 };
 
 MatrixUtil* GetCUDAMatrixUtil();

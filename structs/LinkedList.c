@@ -1,6 +1,6 @@
-#include "LinkedList.h"
+#include "List.h"
 
-ListNode* getImpl(LinkedList* self, int idx)
+ListNode* getImpl(List* self, int idx)
 {
   if (idx < self->count)
   {
@@ -21,7 +21,7 @@ ListNode* getImpl(LinkedList* self, int idx)
   }
 }
 
-void removeImpl(LinkedList* self, int idx)
+void removeImpl(List* self, int idx)
 {
   ListNode* remnode = self->get(self,idx);
   if (remnode->nextNode != NULL)
@@ -50,7 +50,7 @@ void removeImpl(LinkedList* self, int idx)
   self->count--;
 }
 
-ListNode* popImpl(LinkedList* self, int idx)
+ListNode* popImpl(List* self, int idx)
 {
   ListNode* remnode = self->get(self,idx);
   if (remnode->nextNode != NULL)
@@ -74,7 +74,7 @@ ListNode* popImpl(LinkedList* self, int idx)
   return remnode;
 }
 
-void appendImpl(LinkedList* self, ListNode* node)
+void appendImpl(List* self, ListNode* node)
 {
     if (self->lastNode == NULL)
     {
@@ -90,7 +90,7 @@ void appendImpl(LinkedList* self, ListNode* node)
     }
 }
 
-void insertImpl(LinkedList *self, ListNode* node, int idx)
+void insertImpl(List *self, ListNode* node, int idx)
 {
   if (idx < self->count)
   {
@@ -115,14 +115,16 @@ void insertImpl(LinkedList *self, ListNode* node, int idx)
 
 
 
-LinkedList* NewLinkedList()
+List* NewList()
 {
-  LinkedList* list = (LinkedList*)malloc(sizeof(LinkedList));
+  List* list = (List*)malloc(sizeof(List));
   list->get = getImpl;
   list->remove = removeImpl;
   list->pop = popImpl;
   list->insert = insertImpl;
   list->append = appendImpl;
+  list->count = 0;
+  list->binarySearch = listBinarySearchImpl;
   list->firstNode = NULL;
   list->lastNode = NULL;
   return list;

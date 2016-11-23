@@ -1,10 +1,30 @@
 #include <stdlib.h>
-#include "MatrixUtil.h"
+//#include "MatrixUtil.h"
+#include "Image.h"
+#include "lodepng/lodepng.c"
 
-typedef struct Image Image;
-typedef Matrix* (*getRegionFunc)(Image* self,int,int,int,int);
-struct Image
+typedef struct ImageUtil ImageUtil;
+
+typedef Image* (*newImageFromMatrixFunc)(ImageUtil*,Matrix*);
+typedef Image* (*newEmptyImageFunc)(ImageUtil*, int, int );
+typedef Image* (*loadImageFromFileFunc)(ImageUtil*, char*);
+typedef void (*saveImageToFileFunc)(ImageUtil*,Image*, char*);
+typedef ScaleSpaceImage* (*buildPyramidFunc)(ImageUtil*,Image*,int,int);
+typedef Image* (*downsampleImageFunc)(ImageUtil*,Image*,int,int);
+typedef Image* (*imimFunc)(ImageUtil*,Image*,Image*);
+typedef Image* (*generateGaussFunc)(ImageUtil*,int,float);
+
+struct ImageUtil
 {
-  Matrix* data;
-  getRegionFunc getRegion;
+  MatrixUtil* matrixUtil;
+  newImageFromMatrixFunc newImageFromMatrix;
+  newEmptyImageFunc newEmptyImage;
+  downsampleImageFunc downsample;
+  loadImageFromFileFunc loadImageFromFile;
+  saveImageToFileFunc saveImageToFile;
+  buildPyramidFunc buildPyrmaid;
+  imimFunc convolve;
+  generateGaussFunc generateGaussian;
 };
+
+ImageUtil* GetImageUtil(MatrixUtil* matrixUtil);

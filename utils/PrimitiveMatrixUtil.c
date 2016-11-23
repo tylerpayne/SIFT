@@ -68,9 +68,8 @@ Matrix* newPrimMatrixImpl(float* data, int rows, int columns)
   return m;
 }
 
-Matrix* addPrimMatrixImpl(Matrix* a, Matrix* b)
+void addPrimMatrixImpl(Matrix* a, Matrix* b, Matrix* retval)
 {
-  Matrix* retval = newEmptyPrimMatrixImpl(a->shape[0],a->shape[1]);
   for (int i = 0; i < a->shape[0]; i++)
   {
     for (int j = 0; j < a->shape[1]; j++)
@@ -81,12 +80,11 @@ Matrix* addPrimMatrixImpl(Matrix* a, Matrix* b)
   return retval;
 }
 
-Matrix* subtractPrimMatrixImpl(Matrix* a, Matrix* b)
+void subtractPrimMatrixImpl(Matrix* a, Matrix* b, Matrix* retval)
 {
   /*
   a-b
   */
-  Matrix* retval = newEmptyPrimMatrixImpl(a->shape[0],a->shape[1]);
   for (int i = 0; i < a->shape[0]; i++)
   {
     for (int j = 0; j < a->shape[1]; j++)
@@ -97,9 +95,8 @@ Matrix* subtractPrimMatrixImpl(Matrix* a, Matrix* b)
   return retval;
 }
 
-Matrix* multiplyPrimMatrixImpl(Matrix* a, Matrix* b)
+void multiplyPrimMatrixImpl(Matrix* a, Matrix* b, Matix* retval)
 {
-  Matrix* retval = newEmptyPrimMatrixImpl(a->shape[0],a->shape[1]);
   for (int i = 0; i < a->shape[0]; i++)
   {
     for (int j = 0; j < a->shape[1]; j++)
@@ -109,9 +106,8 @@ Matrix* multiplyPrimMatrixImpl(Matrix* a, Matrix* b)
   }
   return retval;
 }
-Matrix* multiplyConstPrimMatrixImpl(Matrix* a, float k)
+void multiplyConstPrimMatrixImpl(Matrix* a, float k, Matrix* retval)
 {
-  Matrix* retval = newEmptyPrimMatrixImpl(a->shape[0],a->shape[1]);
   for (int i = 0; i < a->shape[0]; i++)
   {
     for (int j = 0; j < a->shape[1]; j++)
@@ -121,9 +117,8 @@ Matrix* multiplyConstPrimMatrixImpl(Matrix* a, float k)
   }
   return retval;
 }
-Matrix* dividePrimMatrixImpl(Matrix* a, Matrix* b)
+void dividePrimMatrixImpl(Matrix* a, Matrix* b, Matrix* retval)
 {
-  Matrix* retval = newEmptyPrimMatrixImpl(a->shape[0],a->shape[1]);
   for (int i = 0; i < a->shape[0]; i++)
   {
     for (int j = 0; j < a->shape[1]; j++)
@@ -134,9 +129,8 @@ Matrix* dividePrimMatrixImpl(Matrix* a, Matrix* b)
   return retval;
 }
 
-Matrix* divideConstPrimMatrixImpl(Matrix* a, float b)
+void divideConstPrimMatrixImpl(Matrix* a, float b, Matrix* retval)
 {
-  Matrix* retval = newEmptyPrimMatrixImpl(a->shape[0],a->shape[1]);
   for (int i = 0; i < a->shape[0]; i++)
   {
     for (int j = 0; j < a->shape[1]; j++)
@@ -147,9 +141,8 @@ Matrix* divideConstPrimMatrixImpl(Matrix* a, float b)
   return retval;
 }
 
-Matrix* sqrtPrimMatrixImpl(Matrix* a)
+void sqrtPrimMatrixImpl(Matrix* a, Matrix* retval)
 {
-  Matrix* retval = newEmptyPrimMatrixImpl(a->shape[0],a->shape[1]);
   for (int i = 0; i < a->shape[0]; i++)
   {
     for (int j = 0; j < a->shape[1]; j++)
@@ -176,9 +169,8 @@ int isEqualPrimMatrixImpl(Matrix* a, Matrix* b)
   return retval;
 }
 
-Matrix* arctanPrimMatrixImpl(Matrix* a)
+void arctanPrimMatrixImpl(Matrix* a, Matrix* retval)
 {
-  Matrix* retval = newEmptyPrimMatrixImpl(a->shape[0],a->shape[1]);
   for (int i = 0; i < a->shape[0]; i++)
   {
     for (int j = 0; j < a->shape[1]; j++)
@@ -189,9 +181,8 @@ Matrix* arctanPrimMatrixImpl(Matrix* a)
   return retval;
 }
 
-Matrix* expPrimMatrixImpl(Matrix* a)
+void expPrimMatrixImpl(Matrix* a, Matrix* retval)
 {
-  Matrix* retval = newEmptyPrimMatrixImpl(a->shape[0],a->shape[1]);
   for (int i = 0; i < a->shape[0]; i++)
   {
     for (int j = 0; j < a->shape[1]; j++)
@@ -202,9 +193,8 @@ Matrix* expPrimMatrixImpl(Matrix* a)
   return retval;
 }
 
-Matrix* logPrimMatrixImpl(Matrix* a)
+void logPrimMatrixImpl(Matrix* a, Matrix* retval)
 {
-  Matrix* retval = newEmptyPrimMatrixImpl(a->shape[0],a->shape[1]);
   for (int i = 0; i < a->shape[0]; i++)
   {
     for (int j = 0; j < a->shape[1]; j++)
@@ -215,9 +205,8 @@ Matrix* logPrimMatrixImpl(Matrix* a)
   return retval;
 }
 
-Matrix* powPrimMatrixImpl(Matrix* a, float k)
+void powPrimMatrixImpl(Matrix* a, float k, Matrix* retval)
 {
-  Matrix* retval = newEmptyPrimMatrixImpl(a->shape[0],a->shape[1]);
   for (int i = 0; i < a->shape[0]; i++)
   {
     for (int j = 0; j < a->shape[1]; j++)
@@ -228,9 +217,8 @@ Matrix* powPrimMatrixImpl(Matrix* a, float k)
   return retval;
 }
 
-Matrix* ceilPrimMatrixImpl(Matrix* a)
+void ceilPrimMatrixImpl(Matrix* a, Matrix* retval)
 {
-  Matrix* retval = newEmptyPrimMatrixImpl(a->shape[0],a->shape[1]);
   for (int i = 0; i < a->shape[0]; i++)
   {
     for (int j = 0; j < a->shape[1]; j++)
@@ -241,9 +229,8 @@ Matrix* ceilPrimMatrixImpl(Matrix* a)
   return retval;
 }
 
-Matrix* floorPrimMatrixImpl(Matrix* a)
+void floorPrimMatrixImpl(Matrix* a, Matrix* retval)
 {
-  Matrix* retval = newEmptyPrimMatrixImpl(a->shape[0],a->shape[1]);
   for (int i = 0; i < a->shape[0]; i++)
   {
     for (int j = 0; j < a->shape[1]; j++)
@@ -254,9 +241,8 @@ Matrix* floorPrimMatrixImpl(Matrix* a)
   return retval;
 }
 
-Matrix* absPrimMatrixImpl(Matrix* a)
+void absPrimMatrixImpl(Matrix* a, Matrix* retval)
 {
-  Matrix* retval = newEmptyPrimMatrixImpl(a->shape[0],a->shape[1]);
   for (int i = 0; i < a->shape[0]; i++)
   {
     for (int j = 0; j < a->shape[1]; j++)
@@ -269,7 +255,6 @@ Matrix* absPrimMatrixImpl(Matrix* a)
 
 Matrix* transposePrimMatrixImpl(Matrix* a)
 {
-  Matrix* retval = newEmptyPrimMatrixImpl(a->shape[1],a->shape[0]);
   for (int i = 0; i < a->shape[0]; i++)
   {
     for (int j = 0; j < a->shape[1]; j++)
@@ -290,9 +275,8 @@ float vecDotPrimMatrixImpl(float* a, int dA, float* b, int dB)
   return retval;
 }
 
-Matrix* dotPrimMatrixImpl(Matrix* a, Matrix* b)
+void dotPrimMatrixImpl(Matrix* a, Matrix* b, Matrix* retval)
 {
-  Matrix* retval = newEmptyPrimMatrixImpl(a->shape[0],b->shape[1]);
   Matrix* bT = transposePrimMatrixImpl(b);
   for (int i = 0; i < a->shape[0]; i++)
   {
@@ -324,20 +308,7 @@ Matrix* invPrimMatrixImpl(Matrix* A)
   }
   Matrix* solver = newPrimMatrixImpl(solverData,height,width);
   Matrix* results = newPrimMatrixImpl(resultsData,height,width);
-  /*printf("\n\n################################################\n\n");
-  printf("INITIAL!:\n");
-  for (int i = 0; i < 3; i++)
-  {
-    for (int j = 0;j< 3;j++)
-    {
-      printf("  %f  |",solver->getElement(solver,i,j));
-    }
-    for (int j = 0;j< 3;j++)
-    {
-      printf("|  %f  ",results->getElement(results,i,j));
-    }
-    printf("\n");
- }*/
+
   for (int col = 0; col<width-1; col++)
   {
     Matrix* pivot = newPrimMatrixImpl(solver->getRegion(solver,col,0,1,width),1,width);
@@ -353,19 +324,6 @@ Matrix* invPrimMatrixImpl(Matrix* A)
       Matrix* updatedResult = subtractPrimMatrixImpl(thisResultRow,scaledResult);
       results->setRegion(results,row,0,1,width,(float*)updatedResult->nativePtr);
       solver->setRegion(solver,row,0,1,width,(float*)updatedRow->nativePtr);
-      /*printf("\n\n==========================================================\n\n");
-      printf("Updated Solver for iteration (%i,%i)\n\n",row,col);
-      printf("Scaled Pivot:  %f   |   %f   |   %f  ||   %f \n\n",scaledPivot->getElement(scaledPivot,0,0),scaledPivot->getElement(scaledPivot,0,1),scaledPivot->getElement(scaledPivot,0,2),scaledResult);
-      for (int i = 0; i < height; i++)
-      {
-        for (int j = 0;j< width;j++)
-        {
-          printf("  %f  |",solver->getElement(solver,i,j));
-        }
-        printf("|  %f",results->getElement(results,i,0));
-        printf("\n----------------------------------------------------------\n");
-      }
-      */
     }
   }
   for (int col = width-1; col>=0; col--)
@@ -395,20 +353,6 @@ Matrix* invPrimMatrixImpl(Matrix* A)
     results->setRegion(results,col,0,1,width,(float*)resultPivot->nativePtr);
     solver->setRegion(solver,col,0,1,width,(float*)pivot->nativePtr);
   }
-  /*printf("\n\n################################################\n\n");
-  printf("SOLVED!:\n");
-  for (int i = 0; i < 3; i++)
-  {
-    for (int j = 0;j< 3;j++)
-    {
-      printf("  %f  |",solver->getElement(solver,i,j));
-    }
-    for (int j = 0;j< 3;j++)
-    {
-      printf("|  %f  ",results->getElement(results,i,j));
-    }
-    printf("\n");
-  }*/
   return results;
 }
 
@@ -437,26 +381,8 @@ Matrix* solvePrimMatrixImpl(Matrix* A, Matrix* y)
       float updatedResult = results->getElement(results,row,0) - scaledResult;
       results->setElement(results,row,0,updatedResult);
       solver->setRegion(solver,row,0,1,width,(float*)updatedRow->nativePtr);
-      /*printf("\n\n==========================================================\n\n");
-      printf("Updated Solver for iteration (%i,%i)\n\n",row,col);
-      printf("Scaled Pivot:  %f   |   %f   |   %f  ||   %f \n\n",scaledPivot->getElement(scaledPivot,0,0),scaledPivot->getElement(scaledPivot,0,1),scaledPivot->getElement(scaledPivot,0,2),scaledResult);
-      for (int i = 0; i < height; i++)
-      {
-        for (int j = 0;j< width;j++)
-        {
-          printf("  %f  |",solver->getElement(solver,i,j));
-        }
-        printf("|  %f",results->getElement(results,i,0));
-        printf("\n----------------------------------------------------------\n");
-      }
-      */
     }
   }
-  //Finished Forward Pass
-  //printf("\n\n==========================================================\n\n");
-  //printf("BEGIN BACKWARDPASS\n");
-  //printf("\n\n==========================================================\n\n");
-
   for (int col = width-1; col >= 0; col--)
   {
     float thisUnknown = solver->getElement(solver,col,col);
@@ -499,10 +425,40 @@ Matrix* lstsqPrimMatrixImpl(Matrix* A, Matrix* b)
 
 }
 
-void pprintPrimMatrixImpl(Matrix* A)
+void convolvePrimMatrixImpl(Matrix* im, Matrix* kernel, Matrix* retval)
 {
-  printf("\n\n################################################\n\n");
-  printf("MATRIX:\n");
+  int iw = im->shape[0];
+  int ih = im->shape[1];
+  int kw = kernel->shape[0];
+  int kh = kernel->shape[1];
+
+  int radius = kw/2;
+
+  for (int i = 0; i < iw; i++)
+  {
+    for (int j = 0; j < ih; j++)
+    {
+      for (int ki = 0; ki< kw; ki++)
+      {
+        for (int kj = 0; kj<kh ;kj++)
+        {
+          if (i+(ki-radius) > 0 && i+(ki-radius) < iw && j+(kj-radius) > 0 && j+(kj-radius) < ih)
+          {
+            float val = kernel->getElement(kernel,ki,kj) * im->getElement(im,i+(ki-radius),j+(kj-radius));
+            ((float*)retval->nativePtr)[IDX2C(i,j,ih)] += val;
+            //printf("[ (%i,%i) (%i,%i) ]\n",i,j,ki-radius,kj-radius);
+          }
+        }
+      }
+    }
+  }
+  return retval;
+}
+
+void pprintPrimMatrixImpl(Matrix* A, char* label)
+{
+  printf("\n\n################################################");
+  printf("\n%s:\n\n",label);
   for (int i = 0; i < A->shape[0]; i++)
   {
     for (int j = 0;j< A->shape[1];j++)
@@ -515,6 +471,11 @@ void pprintPrimMatrixImpl(Matrix* A)
   printf("\n################################################\n\n");
 }
 
+void syncPrimMatrixImpl(Matrix* m)
+{
+  return;
+}
+
 
 MatrixUtil* GetPrimitiveMatrixUtil()
 {
@@ -522,6 +483,7 @@ MatrixUtil* GetPrimitiveMatrixUtil()
 
   primitiveMatrixUtil->newEmptyMatrix = newEmptyPrimMatrixImpl;
   primitiveMatrixUtil->newMatrix = newPrimMatrixImpl;
+  primitiveMatrixUtil->sync = syncPrimMatrixImpl;
   primitiveMatrixUtil->pprint = pprintPrimMatrixImpl;
   primitiveMatrixUtil->add = addPrimMatrixImpl;
   primitiveMatrixUtil->subtract = subtractPrimMatrixImpl;
@@ -538,11 +500,13 @@ MatrixUtil* GetPrimitiveMatrixUtil()
   primitiveMatrixUtil->ceil = ceilPrimMatrixImpl;
   primitiveMatrixUtil->floor = floorPrimMatrixImpl;
   primitiveMatrixUtil->abs = absPrimMatrixImpl;
+  //
   primitiveMatrixUtil->transpose = transposePrimMatrixImpl;
   primitiveMatrixUtil->dot = dotPrimMatrixImpl;
   primitiveMatrixUtil->inv = invPrimMatrixImpl;
   primitiveMatrixUtil->solve = solvePrimMatrixImpl;
   primitiveMatrixUtil->lstsq = lstsqPrimMatrixImpl;
+  primitiveMatrixUtil->convolve = convolvePrimMatrixImpl;
 //_TODO: cross
 
   return primitiveMatrixUtil;

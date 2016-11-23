@@ -1,21 +1,27 @@
 #include <stdlib.h>
 #include "Matrix.h"
 
-typedef Matrix* (*m1m2rFunc)(Matrix *, Matrix *);
+typedef void (*m1m2rFunc)(Matrix *, Matrix *, Matrix *);
 typedef int (*m1m2Func)(Matrix *, Matrix *);
-typedef Matrix* (*m1Func)(Matrix *);
-typedef Matrix* (*m1fFunc)(Matrix *, float);
-typedef Matrix* (*mrFunc)(Matrix*);
+typedef void (*m1Func)(Matrix *, Matrix*);
+typedef Matrix* (*mTFunc)(Matrix *);
+typedef Matrix* (*mSFunc)(Matrix *, Matrix*);
+typedef void (*m1fFunc)(Matrix *, float, Matrix*);
+typedef void (*mrFunc)(Matrix*, Matrix*);
 typedef Matrix* (*newMatrixFunc)(int,int);
 typedef Matrix* (*newMatrixWithFloatFunc)(float*,int,int);
-typedef void (*prettyPrintFunc)(Matrix*);
+typedef void (*prettyPrintFunc)(Matrix*,char*);
+typedef void (*syncMatrixFunc)(Matrix*);
 
 typedef struct MatrixUtil MatrixUtil;
 
 struct MatrixUtil
 {
+  int verbosity;
   newMatrixFunc newEmptyMatrix;
   newMatrixWithFloatFunc newMatrix;
+  syncMatrixFunc sync;
+  m1Func downsample;
   m1m2rFunc add;
   m1m2rFunc subtract;
   m1m2rFunc multiply;
@@ -31,12 +37,13 @@ struct MatrixUtil
   m1Func ceil;
   m1Func floor;
   m1Func abs;
-  mrFunc transpose;
+  mTFunc transpose;
   m1m2rFunc dot;
   m1m2rFunc cross;
-  mrFunc inv;
-  m1m2rFunc solve;
-  m1m2rFunc lstsq;
+  mTFunc inv;
+  mSFunc solve;
+  mSFunc lstsq;
+  m1m2rFunc convolve;
   prettyPrintFunc pprint;
 };
 

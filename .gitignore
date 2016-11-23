@@ -6,6 +6,9 @@
 *.exe
 *.o
 *.so
+*.obj
+*.lib
+*.exp
 
 # Packages #
 ############
@@ -19,7 +22,6 @@
 *.rar
 *.tar
 *.zip
-*.obj
 
 
 # Images #

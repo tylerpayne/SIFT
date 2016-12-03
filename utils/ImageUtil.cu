@@ -60,7 +60,7 @@ void saveImageToFileImpl(ImageUtil* self, Image* im, char* p)
   /*Encode the image*/
   if (VERBOSITY > 0)
   {
-      printf("###########   Saving File: ' %s '   ############",p);
+      printf("###########    Saving File: ' %s '   ############",p);
   }
   self->matrixUtil->sync(im->pixels);
   const char* path = p;
@@ -105,40 +105,6 @@ void saveImageToFileImpl(ImageUtil* self, Image* im, char* p)
   }
 }
 
-/*ScaleSpaceImage* buildGaussianPyrmaid(Image* im, int octaves, int scalesperoctave)
-{
-
-}*/
-
-Image* generateGaussianImpl(ImageUtil* self, int width, float std)
-{
-  float* data = (float*)malloc(sizeof(float)*width*width);
-  int radius = width/2;
-  float variance = std*std;
-  //float coeff = 1.0/(2*M_PI);
-  float sum = 0;
-  for (int j = 0; j < width; j++)
-  {
-    for (int i = 0; i < width; i++)
-    {
-      float x = j-radius;
-      float y = i-radius;
-      float power = -1.0*(((x*x)+(y*y))/(2*variance));
-      float val = exp(power);
-      data[IDX2C(i,j,width)] = val;
-      sum += val;
-      //printf("[ %f ]",data[IDX2C(i,j,width)]);
-    }
-    //printf("\n");
-  }
-  for (int r = 0; r < width*width; r++)
-  {
-    data[r] = data[r]/sum;
-  }
-  Matrix* m = self->matrixUtil->newMatrix(data,width,width);
-  return self->newImageFromMatrix(self,m);
-}
-
 Image* convolveImageImpl(ImageUtil* self, Image* im, Image* kernel)
 {
   Matrix* convolvedMat = self->matrixUtil->newEmptyMatrix(im->pixels->shape[0],im->pixels->shape[1]);
@@ -157,37 +123,60 @@ Image* downsampleImageImpl(ImageUtil* self, Image* im, int w, int h)
 
 Image* getSSImageAtImpl(ScaleSpaceImage* self, int octave, int scale)
 {
-  return &self->scalespace[IDX2C(octave,scale,self->nScalesPerOctave)];
+  if (octave<self->nOctaves && scale<self->nScalesPerOctave)
+  {
+    return &(self->scalespace[IDX2C(octave,scale,self->nScalesPerOctave)]);
+  } else
+  {
+    return NULL;
+  }
 }
 
-ScaleSpaceImage* buildPyrmaidImpl(ImageUtil* self, Image* im, int octaves, int scalesPerOctave)
+void setSSImageAtImpl(ScaleSpaceImage* self, Image* img, int octave, int scale)
+{
+  if (octave<self->nOctaves && scale<self->nScalesPerOctave)
+  {
+    self->scalespace[IDX2C(octave,scale,self->nScalesPerOctave)] = *img;
+  }
+}
+
+void syncSSImageImpl(ImageUtil* self, ScaleSpaceImage* im)
+{
+  for (int o = 0; o < im->nOctaves; o++)
+  {
+    for (int s = 0; s < im->nScalesPerOctave; s++)
+    {
+      Matrix* m =im->getImageAt(im,o,s)->pixels;
+      self->matrixUtil->sync(m);
+    }
+  }
+}
+
+ScaleSpaceImage* newEmptySSImageImpl(ImageUtil* self, int octaves, int scalesPerOctave)
 {
   ScaleSpaceImage* ssimage = (ScaleSpaceImage*)malloc(sizeof(ScaleSpaceImage));
   ssimage->nScalesPerOctave = scalesPerOctave;
   ssimage->nOctaves = octaves;
   Image* images = (Image*)malloc(sizeof(Image)*octaves*scalesPerOctave);
+  ssimage->scalespace = images;
+  ssimage->getImageAt = getSSImageAtImpl;
+  ssimage->setImageAt = setSSImageAtImpl;
+  return ssimage;
+}
+
+ScaleSpaceImage* buildPyrmaidImpl(ImageUtil* self, Image* im, int octaves)
+{
+  ScaleSpaceImage* ssimage = self->newEmptyScaleSpaceImage(self,octaves,1);
 
   int w = im->shape[0];
   int h = im->shape[1];
-
   for (int o = 0; o < octaves; o++)
   {
-    float scale = 1.0/(float)scalesPerOctave;
     Image* thisOctave = self->downsample(self,im,w,h);
-    for (int s = 0; s < scalesPerOctave; s++)
-    {
-      float factor = powf(2,scale+(scale*s));
-      Image* gauss = self->generateGaussian(self,10,5*factor);
-      images[IDX2C(o,s,scalesPerOctave)] = *self->convolve(self,thisOctave,gauss);
-      freeCudaMatrixDeviceMemory(gauss->pixels);
-      free(gauss);
-    }
+    ssimage->setImageAt(ssimage,thisOctave,o,1);
     w = w/2;
     h = h/2;
   }
-
-  ssimage->scalespace = images;
-  ssimage->getImageAt = getSSImageAtImpl;
   return ssimage;
 }
 
@@ -197,11 +186,12 @@ ImageUtil* GetImageUtil(MatrixUtil* matrixUtil)
   iu->matrixUtil = matrixUtil;
   iu->newEmptyImage = newEmptyImageImpl;
   iu->newImageFromMatrix = newImageFromMatrixImpl;
+  iu->newEmptyScaleSpaceImage = newEmptySSImageImpl;
   iu->downsample = downsampleImageImpl;
   iu->buildPyrmaid = buildPyrmaidImpl;
   iu->loadImageFromFile = loadImageFromFileImpl;
   iu->saveImageToFile = saveImageToFileImpl;
-  iu->generateGaussian = generateGaussianImpl;
   iu->convolve = convolveImageImpl;
+  iu->syncScaleSpaceImage = syncSSImageImpl;
   return iu;
 }

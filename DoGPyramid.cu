@@ -1,10 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "utils/CUDAMatrixUtil.cu"
-#include "cv/Extractor.c"
+#include "cv/filters.c"
+
 
 int main(int argc, char const *argv[]) {
-  printf("\n################################");
+
   printf("\n################################\n\n");
   for (int i = 0; i < argc; i ++)
   {
@@ -51,15 +52,25 @@ int main(int argc, char const *argv[]) {
   ImageUtil* imutil = GetImageUtil(matutil);
 
   Image* image = imutil->loadImageFromFile(imutil,path);
-  Keypoint* p = NewKeypoint(100, 100, image);
-  int* r = (int*)malloc(sizeof(int));
-  r[0] = 100;
 
-  p->set(p,"radius",r);
-  printf("Radius: %i\n", ((int*)(p->get(p,"radius")))[0]);
+  Image* sobel = MakeSobelKernels(imutil);
 
+  Image* dx = imutil->convolve(imutil,image,&sobel[0]);
+  Image* dy = imutil->convolve(imutil,image,&sobel[1]);
 
-  printf("\n\n################################");
-  printf("\n################################");
+  Matrix* m = matutil->newEmptyMatrix(image->shape[0],image->shape[1]);
+  matutil->divide(dy->pixels,dx->pixels,m);
+  matutil->arctan(m,m);
+
+  //matutil->pow(dx->pixels,2,dx->pixels);
+  //matutil->pow(dy->pixels,2,dy->pixels);
+  //matutil->add(dy->pixels,dx->pixels,m);
+  //matutil->sqrt(m,m);
+
+  Image* gauss = imutil->generateGaussian(imutil,15,15);
+
+  Image* saveim = imutil->convolve(imutil,imutil->newImageFromMatrix(imutil,m),gauss);
+
+  imutil->saveImageToFile(imutil,saveim,"rotderiv.png");
   return 0;
 }

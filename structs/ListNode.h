@@ -4,14 +4,16 @@ typedef struct ListNode ListNode;
 
 typedef void (* insertHereFunc)(ListNode* self, ListNode* n);
 
+typedef struct {
+  int ival;
+  float fval;
+  char* sval;
+} keyUnion;
+
 struct ListNode
 {
   void* value;
-  union {
-    int ival;
-    float fval;
-    char* sval;
-  } key;
+  keyUnion key;
   ListNode* nextNode;
   ListNode* prevNode;
   insertHereFunc insertBefore;

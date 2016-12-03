@@ -315,6 +315,40 @@ void powCudaMatrixImpl(Matrix* A, float B, Matrix* C)
   MatPow<<<gdim,bdim>>>((float*)A->devicePtr,B,(float*)C->devicePtr,A->shape[0],A->shape[1]);
 }
 
+void sqrtCudaMatrixImpl(Matrix* A, Matrix* C)
+{
+  if (A->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(A);
+  }
+  if (C->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(C);
+  }
+  int bdimX = fmin(32,A->shape[0]);
+  int bdimY = fmin(32,A->shape[1]);
+  dim3 bdim(bdimX,bdimY);
+  dim3 gdim(A->shape[0]/bdimX + 1,A->shape[1]/bdimY + 1);
+  MatSqrt<<<gdim,bdim>>>((float*)A->devicePtr,(float*)C->devicePtr,A->shape[0],A->shape[1]);
+}
+
+void arctanCudaMatrixImpl(Matrix* A, Matrix* C)
+{
+  if (A->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(A);
+  }
+  if (C->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(C);
+  }
+  int bdimX = fmin(32,A->shape[0]);
+  int bdimY = fmin(32,A->shape[1]);
+  dim3 bdim(bdimX,bdimY);
+  dim3 gdim(A->shape[0]/bdimX + 1,A->shape[1]/bdimY + 1);
+  MatArctan<<<gdim,bdim>>>((float*)A->devicePtr,(float*)C->devicePtr,A->shape[0],A->shape[1]);
+}
+
 
 //CONVOLVE
 void convolveCudaMatrixImpl(Matrix* A, Matrix* B, Matrix* C)
@@ -386,9 +420,12 @@ void pprintCudaMatrixImpl(Matrix* A, char* label)
   printf("\n################################################\n\n");
 }
 
-void syncCudaMatricImpl(Matrix* m)
+void syncCudaMatrixImpl(Matrix* m)
 {
-  if (!m->isHostSide)
+  if (m->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(m);
+  } else
   {
     copyDeviceToHostCudaMatrix(m);
   }
@@ -397,11 +434,10 @@ void syncCudaMatricImpl(Matrix* m)
 MatrixUtil* GetCUDAMatrixUtil()
 {
   MatrixUtil* cudaMatrixUtil = (MatrixUtil*)malloc(sizeof(MatrixUtil));
-  //cudaMatrixUtil->verbosity = verbosity;
   cudaMatrixUtil->newEmptyMatrix = newEmptyCudaMatrixImpl;
   cudaMatrixUtil->newMatrix = newCudaMatrixImpl;
   cudaMatrixUtil->downsample = downsampleCudaMatrixImpl;
-  cudaMatrixUtil->sync = syncCudaMatricImpl;
+  cudaMatrixUtil->sync = syncCudaMatrixImpl;
   cudaMatrixUtil->pprint = pprintCudaMatrixImpl;
   cudaMatrixUtil->add = addCudaMatrixImpl;
   cudaMatrixUtil->subtract = subtractCudaMatrixImpl;
@@ -410,18 +446,18 @@ MatrixUtil* GetCUDAMatrixUtil()
   cudaMatrixUtil->divide = divideCudaMatrixImpl;
   cudaMatrixUtil->divideConst = divideConstCudaMatrixImpl;
   cudaMatrixUtil->pow = powCudaMatrixImpl;
-  cudaMatrixUtil->sync = syncCudaMatricImpl;
+  cudaMatrixUtil->sync = syncCudaMatrixImpl;
   cudaMatrixUtil->convolve = convolveCudaMatrixImpl;
-  /*cudaMatrixUtil->sqrt = sqrtCudaMatrixImpl;
-  cudaMatrixUtil->isEqual = isEqualCudaMatrixImpl;
+  cudaMatrixUtil->sqrt = sqrtCudaMatrixImpl;
+  //cudaMatrixUtil->isEqual = isEqualCudaMatrixImpl;
   cudaMatrixUtil->arctan = arctanCudaMatrixImpl;
-  cudaMatrixUtil->exp = expCudaMatrixImpl;
-  cudaMatrixUtil->log = logCudaMatrixImpl;
+  //cudaMatrixUtil->exp = expCudaMatrixImpl;
+  //cudaMatrixUtil->log = logCudaMatrixImpl;
 
-  cudaMatrixUtil->ceil = ceilCudaMatrixImpl;
-  cudaMatrixUtil->floor = floorCudaMatrixImpl;
-  cudaMatrixUtil->abs = absCudaMatrixImpl;
-  //
+  //cudaMatrixUtil->ceil = ceilCudaMatrixImpl;
+  //cudaMatrixUtil->floor = floorCudaMatrixImpl;
+  //cudaMatrixUtil->abs = absCudaMatrixImpl;
+  /*
   cudaMatrixUtil->transpose = transposeCudaMatrixImpl;
   cudaMatrixUtil->dot = dotCudaMatrixImpl;
   cudaMatrixUtil->inv = invCudaMatrixImpl;

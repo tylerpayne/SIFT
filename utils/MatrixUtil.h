@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include "Matrix.h"
 
+typedef struct MatrixUtil MatrixUtil;
+
 typedef void (*m1m2rFunc)(Matrix *, Matrix *, Matrix *);
 typedef int (*m1m2Func)(Matrix *, Matrix *);
 typedef void (*m1Func)(Matrix *, Matrix*);
@@ -12,8 +14,6 @@ typedef Matrix* (*newMatrixFunc)(int,int);
 typedef Matrix* (*newMatrixWithFloatFunc)(float*,int,int);
 typedef void (*prettyPrintFunc)(Matrix*,char*);
 typedef void (*syncMatrixFunc)(Matrix*);
-
-typedef struct MatrixUtil MatrixUtil;
 
 struct MatrixUtil
 {

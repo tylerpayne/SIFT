@@ -5,6 +5,7 @@ __device__ int IDX2CKernel(int i, int j, int td)
   return (i*td)+j;
 }
 
+//ADDITION
 __global__ void MatAdd(float* A, float* B, float* C,int ld, int td)
 {
   int col = (blockIdx.y * blockDim.y) + threadIdx.y;
@@ -15,7 +16,7 @@ __global__ void MatAdd(float* A, float* B, float* C,int ld, int td)
     C[IDX2CKernel(row,col,td)] = A[IDX2CKernel(row,col,td)] + B[IDX2CKernel(row,col,td)];
   }
 }
-//ADDITION
+
 __global__ void MatAddConst(float* A, float B, float* C,int ld, int td)
 {
   int col = (blockIdx.y * blockDim.y) + threadIdx.y;
@@ -99,6 +100,78 @@ __global__ void MatPow(float* A, float B, float* C, int ld, int td)
   if (row < ld && col < td)
   {
     C[IDX2CKernel(row,col,td)] = powf(A[IDX2CKernel(row,col,td)],B);
+  }
+}
+
+//sqrt
+__global__ void MatSqrt(float* A, float* C, int ld, int td)
+{
+  int col = (blockIdx.y * blockDim.y) + threadIdx.y;
+  int row = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (row < ld && col < td)
+  {
+    C[IDX2CKernel(row,col,td)] = sqrtf(A[IDX2CKernel(row,col,td)]);
+  }
+}
+
+//exp
+__global__ void MatExp(float* A, float* C, int ld, int td)
+{
+  int col = (blockIdx.y * blockDim.y) + threadIdx.y;
+  int row = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (row < ld && col < td)
+  {
+    C[IDX2CKernel(row,col,td)] = expf(A[IDX2CKernel(row,col,td)]);
+  }
+}
+
+//abs
+__global__ void MatAbs(float* A, float* C, int ld, int td)
+{
+  int col = (blockIdx.y * blockDim.y) + threadIdx.y;
+  int row = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (row < ld && col < td)
+  {
+    C[IDX2CKernel(row,col,td)] = abs(A[IDX2CKernel(row,col,td)]);
+  }
+}
+
+//arcctan
+__global__ void MatArctan(float* A, float* C, int ld, int td)
+{
+  int col = (blockIdx.y * blockDim.y) + threadIdx.y;
+  int row = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (row < ld && col < td)
+  {
+    C[IDX2CKernel(row,col,td)] = atanf(A[IDX2CKernel(row,col,td)]);
+  }
+}
+
+//log
+__global__ void MatLog(float* A, float* C, int ld, int td)
+{
+  int col = (blockIdx.y * blockDim.y) + threadIdx.y;
+  int row = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (row < ld && col < td)
+  {
+    C[IDX2CKernel(row,col,td)] = log(A[IDX2CKernel(row,col,td)]);
+  }
+}
+
+//isEqual
+__global__ void MatisEqual(float* A, float* B, float* C, int ld, int td)
+{
+  int col = (blockIdx.y * blockDim.y) + threadIdx.y;
+  int row = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (row < ld && col < td)
+  {
+    if (B[IDX2CKernel(row,col,td)] == A[IDX2CKernel(row,col,td)])
+    {
+      C[IDX2CKernel(row,col,td)] = 1;
+    } else
+    {
+      C[IDX2CKernel(row,col,td)] = 0;
+    }
   }
 }
 

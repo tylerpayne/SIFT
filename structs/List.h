@@ -6,8 +6,9 @@ typedef struct List List;
 typedef void (*vlllnFunc)(List*,ListNode*);
 typedef void (*vlllniFunc)(List*, ListNode*, int);
 typedef void (*vlliFunc)(List*,int);
+typedef ListNode* (*lllluFunc)(List*, keyUnion);
 typedef ListNode* (*lllliFunc)(List*, int);
-typedef ListNode* (*llllfFunc)(List*, float);
+typedef ListNode* (*llllsFunc)(List*, char*);
 
 struct List
 {
@@ -17,11 +18,10 @@ struct List
   vlllniFunc insert;
   vlliFunc remove;
   lllliFunc pop;
-  lllliFunc get;
-  llllfFunc binarySearch;
+  lllluFunc get;
+  lllliFunc getIndex;
+  llllsFunc getKey;
   int count;
-  float* keyArray;
-  ListNode* nodePtrArray;
 };
 
 List* NewList();

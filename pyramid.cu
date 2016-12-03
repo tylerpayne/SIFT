@@ -14,8 +14,8 @@ int main(int argc, char const *argv[]) {
   char* path;
   int octaves = 8;
   int scales = 5;
-  int saveo = 3;
-  int saves = 3;
+  int saveo = 2;
+  int saves = 2;
   path = "image.png";
 
   for (int i = 1; i < argc; i++)

@@ -1,6 +1,28 @@
 #include "List.h"
+#include <string.h>
 
-ListNode* getImpl(List* self, int idx)
+ListNode* getSImpl(List* self, char* key)
+{
+  if (self->count > 0)
+  {
+    ListNode* n = self->firstNode;
+    while (strcmp(n->key.sval,key) == 1)
+    {
+      if (n->nextNode == NULL)
+      {
+        n = NULL;
+        break;
+      }
+      n = n->nextNode;
+    }
+    return n;
+  } else
+  {
+    return NULL;
+  }
+}
+
+ListNode* getIImpl(List* self, int idx)
 {
   if (idx < self->count)
   {
@@ -21,9 +43,31 @@ ListNode* getImpl(List* self, int idx)
   }
 }
 
+ListNode* getFImpl(List* self, float key)
+{
+  if (self->count > 0)
+  {
+    //TO DO
+    return NULL;
+  } else
+  {
+    return NULL;
+  }
+}
+
+ListNode* getImpl(List* self, keyUnion idx)
+{
+  if (idx.sval != NULL)
+  {
+    return getSImpl(self,idx.sval);
+  }
+  return getIImpl(self,idx.ival);
+}
+
+
 void removeImpl(List* self, int idx)
 {
-  ListNode* remnode = self->get(self,idx);
+  ListNode* remnode = self->getIndex(self,idx);
   if (remnode->nextNode != NULL)
   {
     if (remnode->prevNode != NULL)
@@ -52,7 +96,7 @@ void removeImpl(List* self, int idx)
 
 ListNode* popImpl(List* self, int idx)
 {
-  ListNode* remnode = self->get(self,idx);
+  ListNode* remnode = self->getIndex(self,idx);
   if (remnode->nextNode != NULL)
   {
     if (remnode->prevNode != NULL)
@@ -78,6 +122,7 @@ void appendImpl(List* self, ListNode* node)
 {
     if (self->lastNode == NULL)
     {
+      node->key.ival = 0;
       self->lastNode = node;
       self->firstNode = node;
       self->count = 1;
@@ -86,6 +131,7 @@ void appendImpl(List* self, ListNode* node)
       self->lastNode->nextNode = node;
       node->prevNode = self->lastNode;
       self->lastNode = node;
+      node->key.ival = self->count;
       self->count++;
     }
 }
@@ -94,7 +140,7 @@ void insertImpl(List *self, ListNode* node, int idx)
 {
   if (idx < self->count)
   {
-    ListNode* insertBefore = self->get(self,idx);
+    ListNode* insertBefore = self->getIndex(self,idx);
     if (insertBefore->prevNode != NULL)
     {
       insertBefore->prevNode->nextNode = node;
@@ -102,6 +148,7 @@ void insertImpl(List *self, ListNode* node, int idx)
     }
     insertBefore->prevNode = node;
     node->nextNode = insertBefore;
+    node->key.ival = idx;
     if (idx==0)
     {
       self->firstNode = node;
@@ -119,12 +166,14 @@ List* NewList()
 {
   List* list = (List*)malloc(sizeof(List));
   list->get = getImpl;
+  list->getIndex = getIImpl;
+  list->getKey = getSImpl;
   list->remove = removeImpl;
   list->pop = popImpl;
   list->insert = insertImpl;
   list->append = appendImpl;
   list->count = 0;
-  list->binarySearch = listBinarySearchImpl;
+  //list->binarySearch = listBinarySearchImpl;
   list->firstNode = NULL;
   list->lastNode = NULL;
   return list;

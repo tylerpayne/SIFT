@@ -37,5 +37,6 @@ ListNode* NewListNode(void* value)
   node->value = value;
   node->nextNode = NULL;
   node->prevNode = NULL;
+  node->key.ival = -1;
   return node;
 }

@@ -55,7 +55,7 @@ ListNode* getFImpl(List* self, float key)
   }
 }
 
-ListNode* getImpl(List* self, keyUnion idx)
+ListNode* getImpl(List* self, dictKey idx)
 {
   if (idx.sval != NULL)
   {

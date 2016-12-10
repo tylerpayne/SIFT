@@ -8,12 +8,12 @@ typedef struct {
   int ival;
   float fval;
   char* sval;
-} keyUnion;
+} dictKey;
 
 struct ListNode
 {
   void* value;
-  keyUnion key;
+  dictKey key;
   ListNode* nextNode;
   ListNode* prevNode;
   insertHereFunc insertBefore;

@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "utils/CUDAMatrixUtil.cu"
-#include "cv/Extractor.c"
+//#include "cv/Extractor.c"
 
 int main(int argc, char const *argv[]) {
   printf("\n################################");
@@ -47,18 +47,43 @@ int main(int argc, char const *argv[]) {
 
   printf("\n################################\n\n");
 
-  MatrixUtil* matutil = GetCUDAMatrixUtil();
-  ImageUtil* imutil = GetImageUtil(matutil);
+  MatrixUtil* matutil = GetCUDAMatrixUtil(1);
 
-  Image* image = imutil->loadImageFromFile(imutil,path);
-  Keypoint* p = NewKeypoint(100, 100, image);
-  int* r = (int*)malloc(sizeof(int));
-  r[0] = 100;
+  int N = 3;
+  int M = 3;
+  int K = 3;
 
-  p->set(p,"radius",r);
-  printf("Radius: %i\n", ((int*)(p->get(p,"radius")))[0]);
+  float* a  = (float*)malloc(sizeof(float)*N*K);
+  float* b  = (float*)malloc(sizeof(float)*K*M);
+  float* c = (float*)malloc(sizeof(float)*N*M);
 
+  for (int z = 0 ;z < N*K;z++)
+  {
+    a[z] = 1;
 
+  }
+  for (int z = 0 ;z < K*M;z++)
+  {
+    b[z] = 1;
+
+  }
+
+  /*Matrix* A = matutil->newMatrix(b,1,3);
+  Matrix* B = matutil->newMatrix(b,1,3);
+  Matrix* C = matutil->newEmptyMatrix(1,3);
+  matutil->pprint(C,"PreAdd");
+  matutil->add(A,B,C);
+  matutil->pprint(C,"Add");*/
+  Matrix* A = matutil->newMatrix(a,N,M);
+  //matutil->pprint(matutil,A,"A");
+  Matrix* B = matutil->newMatrix(b,N,M);
+  Matrix* C = matutil->newEmptyMatrix(N,M);
+  cudaDeviceSynchronize();
+  matutil->pprint(matutil,A,"A");
+  matutil->pprint(matutil,B,"B");
+  matutil->dot(matutil,A,B,C);
+  cudaDeviceSynchronize();
+  matutil->pprint(matutil,C,"C");
   printf("\n\n################################");
   printf("\n################################");
   return 0;

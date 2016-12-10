@@ -77,7 +77,6 @@ void addPrimMatrixImpl(Matrix* a, Matrix* b, Matrix* retval)
       retval->setElement(retval,i,j,a->getElement(a,i,j)+b->getElement(b,i,j));
     }
   }
-  return retval;
 }
 
 void subtractPrimMatrixImpl(Matrix* a, Matrix* b, Matrix* retval)
@@ -92,10 +91,9 @@ void subtractPrimMatrixImpl(Matrix* a, Matrix* b, Matrix* retval)
       retval->setElement(retval,i,j,a->getElement(a,i,j) -  b->getElement(b,i,j));
     }
   }
-  return retval;
 }
 
-void multiplyPrimMatrixImpl(Matrix* a, Matrix* b, Matix* retval)
+void multiplyPrimMatrixImpl(Matrix* a, Matrix* b, Matrix* retval)
 {
   for (int i = 0; i < a->shape[0]; i++)
   {
@@ -104,7 +102,6 @@ void multiplyPrimMatrixImpl(Matrix* a, Matrix* b, Matix* retval)
       retval->setElement(retval,i,j,a->getElement(a,i,j)*b->getElement(b,i,j));
     }
   }
-  return retval;
 }
 void multiplyConstPrimMatrixImpl(Matrix* a, float k, Matrix* retval)
 {
@@ -115,8 +112,8 @@ void multiplyConstPrimMatrixImpl(Matrix* a, float k, Matrix* retval)
       retval->setElement(retval,i,j,a->getElement(a,i,j)*k);
     }
   }
-  return retval;
 }
+
 void dividePrimMatrixImpl(Matrix* a, Matrix* b, Matrix* retval)
 {
   for (int i = 0; i < a->shape[0]; i++)
@@ -126,7 +123,6 @@ void dividePrimMatrixImpl(Matrix* a, Matrix* b, Matrix* retval)
       retval->setElement(retval,i,j,a->getElement(a,i,j)/b->getElement(b,i,j));
     }
   }
-  return retval;
 }
 
 void divideConstPrimMatrixImpl(Matrix* a, float b, Matrix* retval)
@@ -138,7 +134,6 @@ void divideConstPrimMatrixImpl(Matrix* a, float b, Matrix* retval)
       retval->setElement(retval,i,j,a->getElement(a,i,j)/b);
     }
   }
-  return retval;
 }
 
 void sqrtPrimMatrixImpl(Matrix* a, Matrix* retval)
@@ -150,7 +145,6 @@ void sqrtPrimMatrixImpl(Matrix* a, Matrix* retval)
       retval->setElement(retval,i,j,sqrtf(a->getElement(a,i,j)));
     }
   }
-  return retval;
 }
 
 int isEqualPrimMatrixImpl(Matrix* a, Matrix* b)
@@ -178,7 +172,6 @@ void arctanPrimMatrixImpl(Matrix* a, Matrix* retval)
       retval->setElement(retval,i,j,atanf(a->getElement(a,i,j)));
     }
   }
-  return retval;
 }
 
 void expPrimMatrixImpl(Matrix* a, Matrix* retval)
@@ -190,7 +183,6 @@ void expPrimMatrixImpl(Matrix* a, Matrix* retval)
       retval->setElement(retval,i,j,expf(a->getElement(a,i,j)));
     }
   }
-  return retval;
 }
 
 void logPrimMatrixImpl(Matrix* a, Matrix* retval)
@@ -202,7 +194,6 @@ void logPrimMatrixImpl(Matrix* a, Matrix* retval)
       retval->setElement(retval,i,j,logf(a->getElement(a,i,j)));
     }
   }
-  return retval;
 }
 
 void powPrimMatrixImpl(Matrix* a, float k, Matrix* retval)
@@ -214,7 +205,6 @@ void powPrimMatrixImpl(Matrix* a, float k, Matrix* retval)
       retval->setElement(retval,i,j,powf(a->getElement(a,i,j),k));
     }
   }
-  return retval;
 }
 
 void ceilPrimMatrixImpl(Matrix* a, Matrix* retval)
@@ -226,7 +216,6 @@ void ceilPrimMatrixImpl(Matrix* a, Matrix* retval)
       retval->setElement(retval,i,j,ceilf(a->getElement(a,i,j)));
     }
   }
-  return retval;
 }
 
 void floorPrimMatrixImpl(Matrix* a, Matrix* retval)
@@ -238,7 +227,6 @@ void floorPrimMatrixImpl(Matrix* a, Matrix* retval)
       retval->setElement(retval,i,j,floorf(a->getElement(a,i,j)));
     }
   }
-  return retval;
 }
 
 void absPrimMatrixImpl(Matrix* a, Matrix* retval)
@@ -250,11 +238,11 @@ void absPrimMatrixImpl(Matrix* a, Matrix* retval)
       retval->setElement(retval,i,j,fabs(a->getElement(a,i,j)));
     }
   }
-  return retval;
 }
 
 Matrix* transposePrimMatrixImpl(Matrix* a)
 {
+  Matrix* retval = newEmptyPrimMatrixImpl(a->shape[1],a->shape[0]);
   for (int i = 0; i < a->shape[0]; i++)
   {
     for (int j = 0; j < a->shape[1]; j++)
@@ -267,7 +255,7 @@ Matrix* transposePrimMatrixImpl(Matrix* a)
 
 float vecDotPrimMatrixImpl(float* a, int dA, float* b, int dB)
 {
-  float retval;
+  float retval = 0;
   for (int i = 0; i < dA; i++)
   {
     retval += a[i]*b[i];
@@ -285,7 +273,6 @@ void dotPrimMatrixImpl(Matrix* a, Matrix* b, Matrix* retval)
       retval->setElement(retval,i,j,vecDotPrimMatrixImpl(&((float*)a->nativePtr)[IDX2C(i,0,a->shape[1])],a->shape[0],&((float*)bT->nativePtr)[IDX2C(j,0,bT->shape[1])],bT->shape[0]));
     }
   }
-  return retval;
 }
 /*
 Matrix* crossPrimMatrixImpl(Matrix* a, Matrix* b)
@@ -293,8 +280,6 @@ Matrix* crossPrimMatrixImpl(Matrix* a, Matrix* b)
 
 }
 */
-
-
 Matrix* invPrimMatrixImpl(Matrix* A)
 {
   int height = A->shape[0];
@@ -308,24 +293,43 @@ Matrix* invPrimMatrixImpl(Matrix* A)
   }
   Matrix* solver = newPrimMatrixImpl(solverData,height,width);
   Matrix* results = newPrimMatrixImpl(resultsData,height,width);
-
   for (int col = 0; col<width-1; col++)
   {
     Matrix* pivot = newPrimMatrixImpl(solver->getRegion(solver,col,0,1,width),1,width);
+    float normalize = pivot->getElement(pivot,0,col);
+    divideConstPrimMatrixImpl(pivot,normalize,pivot);
+    solver->setRegion(solver,col,0,1,width,(float*)pivot->nativePtr);
     Matrix* resultPivot = newPrimMatrixImpl(results->getRegion(results,col,0,1,width),1,width);
+    divideConstPrimMatrixImpl(resultPivot,normalize,resultPivot);
+    results->setRegion(results,col,0,1,width,(float*)resultPivot->nativePtr);
     for (int row = col+1; row<height; row++)
     {
       Matrix *thisRow = newPrimMatrixImpl(solver->getRegion(solver,row,0,1,width),1,width);
       Matrix* thisResultRow = newPrimMatrixImpl(results->getRegion(results,row,0,1,width),1,width);
       float ratio = thisRow->getElement(thisRow,0,col) / pivot->getElement(pivot,0,col);
-      Matrix* scaledPivot = multiplyConstPrimMatrixImpl(pivot,ratio);
-      Matrix* updatedRow = subtractPrimMatrixImpl(thisRow,scaledPivot);
-      Matrix* scaledResult = multiplyConstPrimMatrixImpl(resultPivot,ratio);
-      Matrix* updatedResult = subtractPrimMatrixImpl(thisResultRow,scaledResult);
+      Matrix* scaledPivot = newEmptyPrimMatrixImpl(pivot->shape[0],pivot->shape[1]);
+      multiplyConstPrimMatrixImpl(pivot,ratio,scaledPivot);
+      Matrix* updatedRow = newEmptyPrimMatrixImpl(thisRow->shape[0],thisRow->shape[1]);
+      subtractPrimMatrixImpl(thisRow,scaledPivot,updatedRow);
+      Matrix* scaledResult = newEmptyPrimMatrixImpl(resultPivot->shape[0],resultPivot->shape[1]);
+      multiplyConstPrimMatrixImpl(resultPivot,ratio,scaledResult);
+      Matrix* updatedResult = newEmptyPrimMatrixImpl(thisResultRow->shape[0],thisResultRow->shape[1]);
+      subtractPrimMatrixImpl(thisResultRow,scaledResult,updatedResult);
+      //pprintPrimMatrixImpl(updatedRow,"updatedRow");
+      //pprintPrimMatrixImpl(thisRow,"thisRow");
       results->setRegion(results,row,0,1,width,(float*)updatedResult->nativePtr);
       solver->setRegion(solver,row,0,1,width,(float*)updatedRow->nativePtr);
     }
   }
+  //Norm bottom right element
+  Matrix* pivot = newPrimMatrixImpl(solver->getRegion(solver,width-1,0,1,width),1,width);
+  float normalize = pivot->getElement(pivot,0,width-1);
+  divideConstPrimMatrixImpl(pivot,normalize,pivot);
+  solver->setRegion(solver,width-1,0,1,width,(float*)pivot->nativePtr);
+  Matrix* resultPivot = newPrimMatrixImpl(results->getRegion(results,width-1,0,1,width),1,width);
+  divideConstPrimMatrixImpl(resultPivot,normalize,resultPivot);
+  results->setRegion(results,width-1,0,1,width,(float*)resultPivot->nativePtr);
+
   for (int col = width-1; col>=0; col--)
   {
     Matrix* pivot = newPrimMatrixImpl(solver->getRegion(solver,col,0,1,width),1,width);
@@ -335,10 +339,14 @@ Matrix* invPrimMatrixImpl(Matrix* A)
       Matrix *thisRow = newPrimMatrixImpl(solver->getRegion(solver,row,0,1,width),1,width);
       Matrix* thisResultRow = newPrimMatrixImpl(results->getRegion(results,row,0,1,width),1,width);
       float ratio = thisRow->getElement(thisRow,0,col) / pivot->getElement(pivot,0,col);
-      Matrix* scaledPivot = multiplyConstPrimMatrixImpl(pivot,ratio);
-      Matrix* updatedRow = subtractPrimMatrixImpl(thisRow,scaledPivot);
-      Matrix* scaledResult = multiplyConstPrimMatrixImpl(resultPivot,ratio);
-      Matrix* updatedResult = subtractPrimMatrixImpl(thisResultRow,scaledResult);
+      Matrix* scaledPivot = newEmptyPrimMatrixImpl(pivot->shape[0],pivot->shape[1]);
+      multiplyConstPrimMatrixImpl(pivot,ratio,scaledPivot);
+      Matrix* updatedRow = newEmptyPrimMatrixImpl(thisRow->shape[0],thisRow->shape[1]);
+      subtractPrimMatrixImpl(thisRow,scaledPivot,updatedRow);
+      Matrix* scaledResult = newEmptyPrimMatrixImpl(resultPivot->shape[0],resultPivot->shape[1]);
+      multiplyConstPrimMatrixImpl(resultPivot,ratio,scaledResult);
+      Matrix* updatedResult = newEmptyPrimMatrixImpl(thisResultRow->shape[0],thisResultRow->shape[1]);
+      subtractPrimMatrixImpl(thisResultRow,scaledResult,updatedResult);
       results->setRegion(results,row,0,1,width,(float*)updatedResult->nativePtr);
       solver->setRegion(solver,row,0,1,width,(float*)updatedRow->nativePtr);
     }
@@ -348,8 +356,8 @@ Matrix* invPrimMatrixImpl(Matrix* A)
     Matrix* pivot = newPrimMatrixImpl(solver->getRegion(solver,col,0,1,width),1,width);
     Matrix* resultPivot = newPrimMatrixImpl(results->getRegion(results,col,0,1,width),1,width);
     float divisor = pivot->getElement(pivot,0,col);
-    pivot = divideConstPrimMatrixImpl(pivot,divisor);
-    resultPivot = divideConstPrimMatrixImpl(resultPivot,divisor);
+    divideConstPrimMatrixImpl(pivot,divisor,pivot);
+    divideConstPrimMatrixImpl(resultPivot,divisor,resultPivot);
     results->setRegion(results,col,0,1,width,(float*)resultPivot->nativePtr);
     solver->setRegion(solver,col,0,1,width,(float*)pivot->nativePtr);
   }
@@ -375,8 +383,10 @@ Matrix* solvePrimMatrixImpl(Matrix* A, Matrix* y)
     {
       Matrix *thisRow = newPrimMatrixImpl(solver->getRegion(solver,row,0,1,width),1,width);
       float ratio = thisRow->getElement(thisRow,0,col) / pivot->getElement(pivot,0,col);
-      Matrix* scaledPivot = multiplyConstPrimMatrixImpl(pivot,ratio);
-      Matrix* updatedRow = subtractPrimMatrixImpl(thisRow,scaledPivot);
+      Matrix* scaledPivot = newEmptyPrimMatrixImpl(pivot->shape[0],pivot->shape[1]);
+      multiplyConstPrimMatrixImpl(pivot,ratio,scaledPivot);
+      Matrix* updatedRow = newEmptyPrimMatrixImpl(thisRow->shape[0],thisRow->shape[1]);
+      subtractPrimMatrixImpl(thisRow,scaledPivot,updatedRow);
       float scaledResult = resultPivot*ratio;
       float updatedResult = results->getElement(results,row,0) - scaledResult;
       results->setElement(results,row,0,updatedResult);
@@ -403,6 +413,21 @@ Matrix* solvePrimMatrixImpl(Matrix* A, Matrix* y)
   }
   return results;
 }
+void pprintPrimMatrixImpl(Matrix* A, char* label)
+{
+  printf("\n\n################################################");
+  printf("\n%s:\n\n",label);
+  for (int i = 0; i < A->shape[0]; i++)
+  {
+    for (int j = 0;j< A->shape[1];j++)
+    {
+      printf("[ %f ]",A->getElement(A,i,j));
+    }
+    //printf("|  %f",y->getElement(y,i,0));
+    printf("\n");
+  }
+  printf("\n################################################\n\n");
+}
 
 Matrix* lstsqPrimMatrixImpl(Matrix* A, Matrix* b)
 {
@@ -415,15 +440,22 @@ Matrix* lstsqPrimMatrixImpl(Matrix* A, Matrix* b)
   Matrix* X = newPrimMatrixImpl(XData,observations,parameters);
   Matrix* y = newPrimMatrixImpl(yData,observations,1);
   Matrix* XT = transposePrimMatrixImpl(X);
-
-  Matrix* Gramian = dotPrimMatrixImpl(XT,X);
+  pprintPrimMatrixImpl(X,"X");
+  pprintPrimMatrixImpl(XT,"XT");
+  Matrix* Gramian = newEmptyPrimMatrixImpl(XT->shape[0],X->shape[1]);
+  dotPrimMatrixImpl(XT,X,Gramian);
+  pprintPrimMatrixImpl(Gramian,"Gramian");
   Gramian = invPrimMatrixImpl(Gramian);
-
-  Matrix* XTy = dotPrimMatrixImpl(XT,y);
-
-  return dotPrimMatrixImpl(Gramian,XTy);
-
+  pprintPrimMatrixImpl(Gramian,"invGramian");
+  Matrix* XTy = newEmptyPrimMatrixImpl(XT->shape[0],y->shape[1]);
+  dotPrimMatrixImpl(XT,y,XTy);
+  pprintPrimMatrixImpl(XTy,"XTy");
+  Matrix* retval = newEmptyPrimMatrixImpl(Gramian->shape[0],XTy->shape[1]);
+  dotPrimMatrixImpl(Gramian,XTy,retval);
+  return retval;
 }
+
+
 
 void convolvePrimMatrixImpl(Matrix* im, Matrix* kernel, Matrix* retval)
 {
@@ -452,24 +484,8 @@ void convolvePrimMatrixImpl(Matrix* im, Matrix* kernel, Matrix* retval)
       }
     }
   }
-  return retval;
 }
 
-void pprintPrimMatrixImpl(Matrix* A, char* label)
-{
-  printf("\n\n################################################");
-  printf("\n%s:\n\n",label);
-  for (int i = 0; i < A->shape[0]; i++)
-  {
-    for (int j = 0;j< A->shape[1];j++)
-    {
-      printf("[ %f ]",A->getElement(A,i,j));
-    }
-    //printf("|  %f",y->getElement(y,i,0));
-    printf("\n");
-  }
-  printf("\n################################################\n\n");
-}
 
 void syncPrimMatrixImpl(Matrix* m)
 {

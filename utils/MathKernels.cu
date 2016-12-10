@@ -66,7 +66,7 @@ __global__ void MatMultConst(float* A, float B, float* C, int ld, int td)
   int row = (blockIdx.x * blockDim.x) + threadIdx.x;
   if (row < ld && col < td)
   {
-    C[IDX2CKernel(row,col,td)] = A[IDX2CKernel(row,col,td)] * B;
+    C[IDX2CKernel(row,col,td)] = A[IDX2CKernel(row,col,td)]*B;
   }
 }
 
@@ -175,16 +175,32 @@ __global__ void MatisEqual(float* A, float* B, float* C, int ld, int td)
   }
 }
 
+extern __shared__ float sharedFloatArray[];
 //CONVOLVE
 __global__ void MatConvolve(float* A, float* B, float* C, int ald, int atd, int bld, int btd)
 {
+
+  float* Adata = (float*)&sharedFloatArray[btd*bld];
+  float* Bdata = (float*)&sharedFloatArray[btd*bld];
+
   int col = (blockIdx.y * blockDim.y) + threadIdx.y;
   int row = (blockIdx.x * blockDim.x) + threadIdx.x;
 
   if (row < ald && col < atd)
   {
-    C[IDX2CKernel(row,col,atd)] = 0.0;
     int radius = btd/2;
+    for (int i = 0; i < btd; i++)
+    {
+      for (int j = 0; j < btd; j++)
+      {
+        int ii = i-radius;
+        int jj = j-radius;
+        Bdata[IDX2CKernel(i,j,btd)] = B[IDX2CKernel(i,j,btd)];
+        Adata[IDX2CKernel(row+ii,col+jj,atd)] = A[IDX2CKernel(row+ii,col+jj,atd)];
+      }
+    }
+    __syncthreads();
+    C[IDX2CKernel(row,col,atd)] = 0.0;
     for (int i = 0; i < btd; i++)
     {
       for (int j = 0; j < btd; j++)
@@ -193,10 +209,39 @@ __global__ void MatConvolve(float* A, float* B, float* C, int ald, int atd, int 
         int jj = j-radius;
         if (row+ii >= 0 && row+ii < ald && col+jj >= 0 && col+jj < atd)
         {
-          C[IDX2CKernel(row,col,atd)] += A[IDX2CKernel(row+ii,col+jj,atd)] * B[IDX2CKernel(i,j,btd)];
+          C[IDX2CKernel(row,col,atd)] += Adata[IDX2CKernel(row+ii,col+jj,atd)] * Bdata[IDX2CKernel(i,j,btd)];
         }
       }
     }
   }
+}
 
+// TRANSPOSE
+__global__ void MatTranspose(float* A, float* C, int ald, int atd)
+{
+  int col = (blockIdx.y * blockDim.y) + threadIdx.y;
+  int row = (blockIdx.x * blockDim.x) + threadIdx.x;
+
+  if (row < ald && col < atd)
+  {
+    C[IDX2CKernel(col,row,ald)] = A[IDX2CKernel(row,col,atd)];
+  }
+}
+
+//B IS TRANSPOSED
+//i.e. atd = btd = cd
+__global__ void MatDot(float* A, float* B, float* C, int ald, int cd, int bld)
+{
+  int col = (blockIdx.y * blockDim.y) + threadIdx.y;
+  int row = (blockIdx.x * blockDim.x) + threadIdx.x;
+//  C[IDX2CKernel(row,col,cd)] = 100;
+  if (row < ald && col < bld)
+  {
+    float retval = 0;
+    for (int i = 0; i < cd; i++)
+    {
+      retval += A[IDX2CKernel(row,i,cd)] * B[IDX2CKernel(col,i,cd)];
+    }
+    C[IDX2CKernel(row,col,cd)] = retval;
+  }
 }

@@ -1,4 +1,6 @@
 #include <stdlib.h>
+#include <cuda_runtime.h>
+#include "cublas_v2.h"
 
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
@@ -8,6 +10,7 @@ int VERBOSITY = 0;
 
 typedef struct Matrix Matrix;
 
+typedef void (*voidFunc)();
 typedef float (*getMatrixElementFunc)(Matrix*, int,int);
 typedef float* (*getMatrixRegionFunc)(Matrix*, int,int,int,int);
 typedef void (*setMatrixElementFunc)(Matrix*, int, int, float);
@@ -20,6 +23,8 @@ struct Matrix
   void* nativePtr;
   void* devicePtr;
   int isHostSide;
+  cublasOperation_t T; // instead of char needs to be OP_T or something like that
+  voidFunc transpose;
   getMatrixElementFunc getElement;
   getMatrixRegionFunc getRegion;
   setMatrixElementFunc setElement;

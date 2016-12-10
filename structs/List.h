@@ -6,7 +6,7 @@ typedef struct List List;
 typedef void (*vlllnFunc)(List*,ListNode*);
 typedef void (*vlllniFunc)(List*, ListNode*, int);
 typedef void (*vlliFunc)(List*,int);
-typedef ListNode* (*lllluFunc)(List*, keyUnion);
+typedef ListNode* (*lllluFunc)(List*, dictKey);
 typedef ListNode* (*lllliFunc)(List*, int);
 typedef ListNode* (*llllsFunc)(List*, char*);
 

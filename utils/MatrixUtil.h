@@ -3,21 +3,24 @@
 
 typedef struct MatrixUtil MatrixUtil;
 
-typedef void (*m1m2rFunc)(Matrix *, Matrix *, Matrix *);
-typedef int (*m1m2Func)(Matrix *, Matrix *);
-typedef void (*m1Func)(Matrix *, Matrix*);
-typedef Matrix* (*mTFunc)(Matrix *);
-typedef Matrix* (*mSFunc)(Matrix *, Matrix*);
-typedef void (*m1fFunc)(Matrix *, float, Matrix*);
-typedef void (*mrFunc)(Matrix*, Matrix*);
+typedef void (*m1m2rFunc)(MatrixUtil* , Matrix *, Matrix *, Matrix *);
+typedef int (*m1m2Func)(MatrixUtil* , Matrix *, Matrix *);
+typedef void (*m1Func)(MatrixUtil* , Matrix *, Matrix*);
+typedef Matrix* (*mTFunc)(MatrixUtil* , Matrix *);
+typedef Matrix* (*mSFunc)(MatrixUtil* , Matrix *, Matrix*);
+typedef void (*m1fFunc)(MatrixUtil* , Matrix *, float, Matrix*);
+typedef void (*mrFunc)(MatrixUtil* , Matrix*, Matrix*);
 typedef Matrix* (*newMatrixFunc)(int,int);
 typedef Matrix* (*newMatrixWithFloatFunc)(float*,int,int);
-typedef void (*prettyPrintFunc)(Matrix*,char*);
-typedef void (*syncMatrixFunc)(Matrix*);
+typedef void (*prettyPrintFunc)(MatrixUtil*,Matrix*,char*);
+typedef void (*syncMatrixFunc)(MatrixUtil* , Matrix*);
 
 struct MatrixUtil
 {
   int verbosity;
+  int deviceId;
+  cudaStream_t stream;
+  cublasHandle_t cublasHandle;
   newMatrixFunc newEmptyMatrix;
   newMatrixWithFloatFunc newMatrix;
   syncMatrixFunc sync;
@@ -47,6 +50,6 @@ struct MatrixUtil
   prettyPrintFunc pprint;
 };
 
-MatrixUtil* GetCUDAMatrixUtil();
+MatrixUtil* GetCUDAMatrixUtil(int device);
 MatrixUtil* GetPrimitiveMatrixUtil();
 MatrixUtil* GetMetalMatrixUtil();

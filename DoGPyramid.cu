@@ -1,7 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "utils/CUDAMatrixUtil.cu"
-#include "cv/filters.c"
+#include "cv/Extractor.c"
+#include <cuda_profiler_api.h>
 
 
 int main(int argc, char const *argv[]) {
@@ -47,30 +48,16 @@ int main(int argc, char const *argv[]) {
   printf("Values: %i, %i, (%i,%i)\n", octaves,scales,saveo,saves);
 
   printf("\n################################\n\n");
-
+  cudaProfilerStart();
   MatrixUtil* matutil = GetCUDAMatrixUtil();
   ImageUtil* imutil = GetImageUtil(matutil);
 
   Image* image = imutil->loadImageFromFile(imutil,path);
 
-  Image* sobel = MakeSobelKernels(imutil);
+  ScaleSpaceImage* pyramid = BuildGaussianPyramid(imutil,image,8,5);
+  ScaleSpaceImage* DoG = ssDifferenceOfGaussian(imutil,pyramid);
 
-  Image* dx = imutil->convolve(imutil,image,&sobel[0]);
-  Image* dy = imutil->convolve(imutil,image,&sobel[1]);
-
-  Matrix* m = matutil->newEmptyMatrix(image->shape[0],image->shape[1]);
-  matutil->divide(dy->pixels,dx->pixels,m);
-  matutil->arctan(m,m);
-
-  //matutil->pow(dx->pixels,2,dx->pixels);
-  //matutil->pow(dy->pixels,2,dy->pixels);
-  //matutil->add(dy->pixels,dx->pixels,m);
-  //matutil->sqrt(m,m);
-
-  Image* gauss = imutil->generateGaussian(imutil,15,15);
-
-  Image* saveim = imutil->convolve(imutil,imutil->newImageFromMatrix(imutil,m),gauss);
-
-  imutil->saveImageToFile(imutil,saveim,"rotderiv.png");
+  imutil->saveImageToFile(imutil,DoG->getImageAt(DoG,3,3),"scalespace.png");
+  cudaProfilerStop();
   return 0;
 }

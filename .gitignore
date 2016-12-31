@@ -28,7 +28,7 @@
 ##########
 *.png
 *.jpg
-!lena.png
+!lena128.png
 !example.png
 
 # Logs and databases #

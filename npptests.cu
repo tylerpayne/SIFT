@@ -51,7 +51,8 @@ int main(int argc, char const *argv[]) {
 
   ImageUtil* imutil = GetImageUtil(1);
   //Load the image
-  Image* im = imutil->loadImageFromFile(imutil,path);
+  Image* in = imutil->loadImageFromFile(imutil,path);
+  Image* im = imutil->resample(imutil,in,128,128);
   //Create the two gaussians
   Image* gauss1 = MakeGaussianKernel(imutil,gw,g1s);
   Image* gauss2 = MakeGaussianKernel(imutil,gw,g2s);
@@ -62,7 +63,7 @@ int main(int argc, char const *argv[]) {
   //Find corners (local maximums)
   Image* corners = imutil->max(imutil,DoGImage,mw);
   //Save image
-  imutil->saveImageToFile(imutil,corners,saves);
+  imutil->saveImageToFile(imutil,im,saves);
   printf("\n\n################################");
   printf("\n################################\n");
   return 0;

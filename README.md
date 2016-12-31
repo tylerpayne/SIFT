@@ -59,7 +59,7 @@ ToDo: Abstract this class and use MatrixUtil as low level image representations,
   //Find corners (local maximums)
   Image* corners = imutil->max(imutil,DoGImage,mw);
   //Save image
-  imutil->saveImageToFile(imutil,corners,saves);
+  imutil->saveImageToFile(imutil,corners,saves); // This is the only function that copies memory from device to host
 ```
 [lodepng]: https://github.com/lvandeve/lodepng
 [CUBLAS]:http://docs.nvidia.com/cuda/cublas/index.html#axzz4UOt5b3uc

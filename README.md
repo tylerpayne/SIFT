@@ -5,8 +5,6 @@ A collection of computer vision, data structures, and math utilites all implemen
 Compile CUDA implementations with:
     nvcc -o EXE_NAME -lnppc -lnppi -lcublas -lcusolver FILENAME.cu
 
----
-
 # Core Components:
 
 ## [MatrixUtil]
@@ -32,6 +30,29 @@ Currently, the ImageUtil class is a concrete implementation, unlike the MatrixUt
 
 ToDo: Abstract this class and use MatrixUtil as low level image representations, not Npp32f.
 
+# Example
+```  
+  int gw = 8; // Width of Gaussian Kernels
+  int g1s = 5; // Sigma of Gaussian Kernel 1
+  int g2s = 3; // Sigma of Gaussian Kernel 2
+  int mw = 15; // Width of LocalMax window
+  char* saves = "DoG.png"; // Filepath to save to
+  char* path = "image.png"; // Filepath to load from
+ImageUtil* imutil = GetImageUtil(1); // 1 refers to CUDA Device Id
+  //Load the image
+  Image* im = imutil->loadImageFromFile(imutil,path);
+  //Create the two gaussians
+  Image* gauss1 = MakeGaussianKernel(imutil,gw,g1s);
+  Image* gauss2 = MakeGaussianKernel(imutil,gw,g2s);
+  //Get difference of gaussian kernel
+  Image* DoGKernel = imutil->subtract(imutil,gauss1,gauss2);
+  //Convolve
+  Image* DoGImage = imutil->convolve(imutil,im,DoGKernel);
+  //Find corners (local maximums)
+  Image* corners = imutil->max(imutil,DoGImage,mw);
+  //Save image
+imutil->saveImageToFile(imutil,corners,saves);
+```
 [lodepng]: https://github.com/lvandeve/lodepng
 [CUBLAS]:http://docs.nvidia.com/cuda/cublas/index.html#axzz4UOt5b3uc
 [CUSOLVER]:http://docs.nvidia.com/cuda/cusolver/index.html#axzz4UOt5b3uc

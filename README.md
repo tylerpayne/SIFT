@@ -2,21 +2,26 @@
 
 A collection of computer vision, data structures, and math utilites all implemented in C and accelerated with [CUDA v8.0].
 
-## Core Components:
+Compile CUDA implementations with:
+    nvcc -o EXE_NAME -lnppc -lnppi -lcublas -lcusolver FILENAME.cu
 
-### [MatrixUtil]
+---
+
+# Core Components:
+
+## [MatrixUtil]
 The abstract definition of the MatrixUtil class, allowing concrete implementations for different platforms (i.e. CUDA, Metal)
-#### [PrimitiveMatrixUtil]
+### [PrimitiveMatrixUtil]
 A plain-C implementation of the MatrixUtil.
 
-#### [CUDAMatrixUtil] 
+### [CUDAMatrixUtil] 
 (INCOMPLETE)
 A [CUBLAS] and [CUSOLVER] implementation of the MatrixUtil.
 
-#### TODO: MetalMatrixUtil
+### TODO: MetalMatrixUtil
 For now, see my other repo [MetalUnity].
 
-### [ImageUtil]
+## [ImageUtil]
 
 ##### File Handling
 (only PNGs are supported currently)
@@ -25,7 +30,7 @@ All file handling is currently done with [lodepng]
 ##### NPP
 Currently, the ImageUtil class is a concrete implementation, unlike the MatrixUtil class. It uses the [Nvidia Performance Primitives] library to perform common arithmetic, geometric and statistical operations on Images.
 
-ToDo: Abstract this class and use MatrixUtil as lowlevel image representations, not Npp32f.
+ToDo: Abstract this class and use MatrixUtil as low level image representations, not Npp32f.
 
 [lodepng]: https://github.com/lvandeve/lodepng
 [CUBLAS]:http://docs.nvidia.com/cuda/cublas/index.html#axzz4UOt5b3uc

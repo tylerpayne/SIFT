@@ -18,7 +18,8 @@ For now, see my other repo [MetalUnity].
 ### ImageUtil
 
 ##### File Handling
-All file handling is currently done with [lodepng] (only PNGs are supported currently)
+(only PNGs are supported currently)
+All file handling is currently done with [lodepng] 
 
 ##### NPP
 Currently, the ImageUtil class is a concrete implementation, unlike the MatrixUtil class. It uses the [Nvidia Performance Primitives] library to perform common arithmetic, geometric and statistical operations on Images.

@@ -4,6 +4,13 @@ A collection of computer vision, data structures, and math utilites all implemen
 
 Compile CUDA implementations with:
     ```nvcc -o EXE_NAME -lnppc -lnppi -lcublas -lcusolver FILENAME.cu```
+    
+# Design Notes
+This library is designed with an Object Oriented architecture. This greatly simplifies the user-facing code and enables the math and image utilites to be platform-agnostic by allowing for abstract definitions and concrete implementations.
+
+A minor annoyance of using this design in the C language is the need to pass a `self` argument to functions. (e.g. `imutil->convolve(imutil,image,kernel)`)
+
+Furthermore: All functions assume they are operating on 32 bit floating point numbers (`float,Npp32f`) (if using CUDA, all Images are in device memory unless explicitly stated otherwise.)
 
 # Core Components:
 

@@ -61,6 +61,7 @@ ToDo: Abstract this class and use MatrixUtil as low level image representations,
   //Save image
   imutil->saveImageToFile(imutil,corners,saves); // This is the only function that copies memory from device to host
 ```
+![lena] ![corners]
 [lodepng]: https://github.com/lvandeve/lodepng
 [CUBLAS]:http://docs.nvidia.com/cuda/cublas/index.html#axzz4UOt5b3uc
 [CUSOLVER]:http://docs.nvidia.com/cuda/cusolver/index.html#axzz4UOt5b3uc
@@ -72,3 +73,5 @@ ToDo: Abstract this class and use MatrixUtil as low level image representations,
 [PrimitiveMatrixUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/PrimitiveMatrixUtil.c
 [CUDAMatrixUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/CUDAMatrixUtil.cu
 [ImageUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/ImageUtil.h
+[lena]:https://github.com/tylerpayne/computervision/blob/master/lena.png
+[corners]:https://github.com/tylerpayne/computervision/blob/master/example.png

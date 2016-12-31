@@ -23,7 +23,7 @@ struct Matrix
   void* nativePtr;
   void* devicePtr;
   int isHostSide;
-  cublasOperation_t T; // instead of char needs to be OP_T or something like that
+  cublasOperation_t T;
   voidFunc transpose;
   getMatrixElementFunc getElement;
   getMatrixRegionFunc getRegion;

@@ -1,5 +1,7 @@
 #include <cuda_runtime.h>
-
+//#####################
+//#### OUTDATED! ######
+//#####################
 __device__ int IDX2CKernel(int i, int j, int td)
 {
   return (i*td)+j;

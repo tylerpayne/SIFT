@@ -478,7 +478,6 @@ void convolvePrimMatrixImpl(Matrix* im, Matrix* kernel, Matrix* retval)
           {
             float val = kernel->getElement(kernel,ki,kj) * im->getElement(im,i+(ki-radius),j+(kj-radius));
             ((float*)retval->nativePtr)[IDX2C(i,j,ih)] += val;
-            //printf("[ (%i,%i) (%i,%i) ]\n",i,j,ki-radius,kj-radius);
           }
         }
       }

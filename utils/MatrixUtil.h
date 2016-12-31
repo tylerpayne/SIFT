@@ -23,8 +23,6 @@ struct MatrixUtil
   cublasHandle_t cublasHandle;
   newMatrixFunc newEmptyMatrix;
   newMatrixWithFloatFunc newMatrix;
-  syncMatrixFunc sync;
-  m1Func downsample;
   m1m2rFunc add;
   m1m2rFunc subtract;
   m1m2rFunc multiply;

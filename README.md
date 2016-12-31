@@ -73,5 +73,5 @@ ToDo: Abstract this class and use MatrixUtil as low level image representations,
 [PrimitiveMatrixUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/PrimitiveMatrixUtil.c
 [CUDAMatrixUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/CUDAMatrixUtil.cu
 [ImageUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/ImageUtil.h
-[lena]:https://github.com/tylerpayne/computervision/blob/master/lena.png
+[lena]:https://github.com/tylerpayne/computervision/blob/master/lena128.png
 [corners]:https://github.com/tylerpayne/computervision/blob/master/example.png

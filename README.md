@@ -4,7 +4,7 @@ A collection of computer vision, data structures, and math utilites all implemen
 
 Compile CUDA implementations with:
     ```nvcc -o EXE_NAME -lnppc -lnppi -lcublas -lcusolver FILENAME.cu```
-    
+
 # Design Notes
 This library is designed with an Object Oriented architecture. This greatly simplifies the user-facing code and enables the math and image utilites to be platform-agnostic by allowing for abstract definitions and concrete implementations.
 
@@ -19,7 +19,7 @@ The abstract definition of the MatrixUtil class, allowing concrete implementatio
 ### [PrimitiveMatrixUtil]
 A plain-C implementation of the MatrixUtil.
 
-### [CUDAMatrixUtil] 
+### [CUDAMatrixUtil]
 (INCOMPLETE)
 A [CUBLAS] and [CUSOLVER] implementation of the MatrixUtil.
 
@@ -30,7 +30,7 @@ For now, see my other repo [MetalUnity].
 
 ##### File Handling
 (only PNGs are supported currently)
-All file handling is currently done with [lodepng] 
+All file handling is currently done with [lodepng]
 
 ##### NPP
 Currently, the ImageUtil class is a concrete implementation, unlike the MatrixUtil class. It uses the [Nvidia Performance Primitives] library to perform common arithmetic, geometric and statistical operations on Images.
@@ -73,5 +73,5 @@ ToDo: Abstract this class and use MatrixUtil as low level image representations,
 [PrimitiveMatrixUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/PrimitiveMatrixUtil.c
 [CUDAMatrixUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/CUDAMatrixUtil.cu
 [ImageUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/ImageUtil.h
-[lena]:https://github.com/tylerpayne/computervision/blob/master/lena128.png
-[corners]:https://github.com/tylerpayne/computervision/blob/master/example.png
+[lena]:https://github.com/tylerpayne/computervision/blob/master/lena256.png
+[corners]:https://github.com/tylerpayne/computervision/blob/master/lenacorners.png

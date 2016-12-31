@@ -52,7 +52,7 @@ int main(int argc, char const *argv[]) {
   ImageUtil* imutil = GetImageUtil(1);
   //Load the image
   Image* in = imutil->loadImageFromFile(imutil,path);
-  Image* im = imutil->resample(imutil,in,128,128);
+  Image* im = imutil->resample(imutil,in,256,256);
   //Create the two gaussians
   Image* gauss1 = MakeGaussianKernel(imutil,gw,g1s);
   Image* gauss2 = MakeGaussianKernel(imutil,gw,g2s);

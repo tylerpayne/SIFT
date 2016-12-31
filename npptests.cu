@@ -6,52 +6,32 @@
 int main(int argc, char const *argv[]) {
   printf("\n################################");
   printf("\n################################\n\n");
-  for (int i = 0; i < argc; i ++)
-  {
-    printf("Argument %i: %s\n",i,argv[i]);
-  }
-  printf("\n################################\n\n");
-  char* path;
-  int gw = 8;
-  int g1s = 5;
-  int g2s = 3;
-  int mw = 15;
   char* saves = "npptests.png";
-  path = "image.png";
+  char* path = "image.png";
 
   for (int i = 1; i < argc; i++)
   {
     switch (i) {
       case 1:
         VERBOSITY = atoi(argv[1]);
+        printf("VERBOSITY = %i\n",VERBOSITY);
         break;
       case 2:
         path = (char*)argv[2];
+        printf("FILEPATH = %s\n",path);
         break;
       case 3:
-        gw = atoi(argv[3]);
-        break;
-      case 4:
-        g1s = atoi(argv[4]);
-        break;
-      case 5:
-        g2s = atoi(argv[5]);
-        break;
-      case 6:
-        mw = atoi(argv[6]);
-        break;
-      case 7:
-        saves = (char*)argv[7];
+        saves = (char*)argv[3];
+        printf("SAVE_FILEPATH = %s\n",saves);
         break;
     }
   }
 
-  printf("Path: %s\n\n",path);
   ImageUtil* imutil = GetImageUtil(1);
 
   Image* im = imutil->loadImageFromFile(imutil,path);
 
-  Image* ret = imutil->gradientAngle(imutil,im);
+  Image* ret = imutil->gradientMagnitude(imutil,im);
 
   imutil->saveImageToFile(imutil,ret,saves);
   printf("\n\n################################");

@@ -4,18 +4,19 @@ A collection of computer vision, data structures, and math utilites all implemen
 
 ## Core Components:
 
-### MatrixUtil
+### [MatrixUtil]
 The abstract definition of the MatrixUtil class, allowing concrete implementations for different platforms (i.e. CUDA, Metal)
-#### PrimitiveMatrixUtil
+#### [PrimitiveMatrixUtil]
 A plain-C implementation of the MatrixUtil.
 
-#### CUDAMatrixUtil (INCOMPLETE)
+#### [CUDAMatrixUtil] 
+(INCOMPLETE)
 A [CUBLAS] and [CUSOLVER] implementation of the MatrixUtil.
 
 #### TODO: MetalMatrixUtil
 For now, see my other repo [MetalUnity].
 
-### ImageUtil
+### [ImageUtil]
 
 ##### File Handling
 (only PNGs are supported currently)
@@ -32,3 +33,8 @@ ToDo: Abstract this class and use MatrixUtil as lowlevel image representations, 
 [MetalUnity]:https://github.com/tylerpayne/MetalUnity
 [Nvidia Performance Primitives]:http://docs.nvidia.com/cuda/npp/index.html#abstract
 [CUDA v8.0]:https://developer.nvidia.com/cuda-toolkit
+
+[MatrixUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/MatrixUtil.h
+[PrimitiveMatrixUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/PrimitiveMatrixUtil.c
+[CUDAMatrixUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/CUDAMatrixUtil.cu
+[ImageUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/ImageUtil.h

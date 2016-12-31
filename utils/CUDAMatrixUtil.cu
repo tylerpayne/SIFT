@@ -202,6 +202,7 @@ void multiplyConstCudaMatrixImpl(MatrixUtil* self, Matrix* A, float b, Matrix* C
   }
   cudaStreamSynchronize(self->stream);
   cublasSetStream(self->cublasHandle,self->stream);
+  //TO DO!! WHICH CUBLAS FUNC!
 }
 
 //DOT

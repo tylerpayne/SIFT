@@ -25,10 +25,10 @@ Image* MakeGaussianKernel(ImageUtil* self, int width, float std)
   {
     data[r] = data[r]/sum;
   }
-  Matrix* m = self->matrixUtil->newMatrix(data,width,width);
-  return self->newImageFromMatrix(self,m);
-}
 
+  return self->newImage(self,data,width,width);
+}
+/*
 Image* MakeSobelKernels(ImageUtil* imutil)
 {
   Image* sobel = (Image*)malloc(sizeof(Image)*2);
@@ -66,4 +66,4 @@ Image* MakeSobelKernels(ImageUtil* imutil)
   sobel[1] = *sobely;
 
   return sobel;
-}
+}*/

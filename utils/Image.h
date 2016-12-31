@@ -1,14 +1,23 @@
 #include <stdlib.h>
+#include <nppi.h>
+
+int VERBOSITY = 0;
+
+static int IDX2C(int i, int j, int td)
+{
+  return (i*td)+j;
+}
+
 
 typedef struct Image Image;
 
 struct Image
 {
   int nChannels;
-  Matrix* pixels;
-  int* shape;
+  Npp32f* pixels;
+  NppiSize shape;
 };
-
+/*
 typedef struct ScaleSpaceImage ScaleSpaceImage;
 
 typedef Image* (*getImageAtFunc)(ScaleSpaceImage* self, int,int);
@@ -22,3 +31,4 @@ struct ScaleSpaceImage
   getImageAtFunc getImageAt;
   setImageAtScaleFunc setImageAt;
 };
+*/

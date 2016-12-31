@@ -31,7 +31,7 @@ struct Matrix
   setMatrixRegionFunc setRegion;
 };
 
-int IDX2C(int i, int j, int td)
+static int IDX2C(int i, int j, int td)
 {
   return (i*td)+j;
 }

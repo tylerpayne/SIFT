@@ -43,8 +43,8 @@ ToDo: Abstract this class and use MatrixUtil as low level image representations,
   //Load the image
   Image* im = imutil->loadImageFromFile(imutil,path);
   //Create the two gaussians
-  Image* gauss1 = MakeGaussianKernel(imutil,gw,g1s);
-  Image* gauss2 = MakeGaussianKernel(imutil,gw,g2s);
+  Image* gauss1 = MakeGaussianKernel(imutil,gw,g1s); // defined in cv/Filters.c
+  Image* gauss2 = MakeGaussianKernel(imutil,gw,g2s); // defined in cv/Filters.c
   //Get difference of gaussian kernel
   Image* DoGKernel = imutil->subtract(imutil,gauss1,gauss2);
   //Convolve

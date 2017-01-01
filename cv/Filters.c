@@ -1,5 +1,3 @@
-#include "utils/ImageUtil.cu"
-
 Image* MakeGaussianKernel(ImageUtil* self, int width, float std)
 {
   float* data = (float*)malloc(sizeof(float)*width*width);

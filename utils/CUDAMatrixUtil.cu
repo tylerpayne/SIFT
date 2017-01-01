@@ -1,27 +1,27 @@
-#include <stdio.h>
-#include <math.h>
-#include <string.h>
 #include "MatrixUtil.h"
 #include "MathKernels.cu"
-#include <math.h>
-#include <cuda_runtime.h>
-#include "cublas_v2.h"
 
 cudaError_t cudaErr;
 cublasStatus_t cublasStat;
 
+void cublasErrCheck(cublasStatus_t stat)
+{
+  if (stat != CUBLAS_STATUS_SUCCESS)
+  {
+    printf("\nCUBLAS ERR: %i\n",stat);
+  }
+}
+
 void freeCudaMatrixDeviceMemory(Matrix* mat)
 {
-  cudaFree((float*)mat->devicePtr);
+  cudaFree(mat->devicePtr);
 }
 
 void copyDeviceToDeviceCudaMatrix(MatrixUtil* self, Matrix* A, Matrix* B)
 {
     cudaSetDevice(self->deviceId);
     size_t size = sizeof(float)*A->shape[0]*A->shape[1];
-    cudaMemcpyAsync((float*)B->devicePtr,(float*)A->devicePtr,size,cudaMemcpyDeviceToDevice,self->stream);
-    B->isHostSide = 0;
-    //cudaMemcpyAsync((float*)mat->devicePtr,(float*)mat->nativePtr,size,cudaMemcpyHostToDevice,self->stream);
+    cudaMemcpyAsync(B->devicePtr,A->devicePtr,size,cudaMemcpyDeviceToDevice,self->stream);
 }
 
 void copyHostToDeviceCudaMatrix(MatrixUtil* self, Matrix* mat)
@@ -34,9 +34,7 @@ void copyHostToDeviceCudaMatrix(MatrixUtil* self, Matrix* mat)
       printf("Copying from Host to Device");
       printf("\n###################\n\n");
     }
-    //cudaMemcpy((float*)mat->devicePtr,(float*)mat->nativePtr,size,cudaMemcpyHostToDevice);
-    cudaMemcpyAsync((float*)mat->devicePtr,(float*)mat->nativePtr,size,cudaMemcpyHostToDevice,self->stream);
-
+    cudaMemcpyAsync(mat->devicePtr,mat->hostPtr,size,cudaMemcpyHostToDevice,self->stream);
     mat->isHostSide = 0;
 }
 
@@ -50,8 +48,7 @@ void copyDeviceToHostCudaMatrix(MatrixUtil* self, Matrix* mat)
     printf("\n###################\n\n");
   }
   size_t size = sizeof(float)*mat->shape[0]*mat->shape[1];
-  //cudaMemcpy((float*)mat->nativePtr,(float*)mat->devicePtr,size,cudaMemcpyDeviceToHost);
-  cudaMemcpyAsync((float*)mat->nativePtr,(float*)mat->devicePtr,size,cudaMemcpyDeviceToHost,self->stream);
+  cudaMemcpyAsync(mat->hostPtr,mat->devicePtr,size,cudaMemcpyDeviceToHost,self->stream);
   mat->isHostSide = 1;
 }
 
@@ -59,14 +56,11 @@ float getCudaMatrixElementImpl(Matrix* self, int i, int  j)
 {
   if (!self->isHostSide)
   {
-    if (VERBOSITY > 3)
-    {
-      printf("\n### GPU WARNING ###\n");
-      printf("Matrix was on device when trying to get.");
-      printf("\n###################\n");
-    }
+    printf("\n### GPU WARNING ###\n");
+    printf("Matrix was on device when trying to get.");
+    printf("\n###################\n");
   }
-  return ((float*)self->nativePtr)[IDX2C(i,j,self->shape[1])];
+  return self->hostPtr[IDX2C(i,j,self->shape[1])];
 }
 
 float* getCudaMatrixRegionImpl(Matrix* self, int i, int j, int h, int w)
@@ -80,7 +74,6 @@ float* getCudaMatrixRegionImpl(Matrix* self, int i, int j, int h, int w)
       data[IDX2C(y,x,w)] = self->getElement(self,y+i,x+j);
     }
   }
-
   return data;
 }
 
@@ -88,14 +81,11 @@ void setCudaMatrixElementImpl(Matrix* self, int i, int  j, float x)
 {
   if (!self->isHostSide)
   {
-    if (VERBOSITY > 3)
-    {
-      printf("\n### GPU WARNING ###\n");
-      printf("Matrix was on device when trying to set!\n");
-      printf("\n###################\n");
-    }
+    printf("\n### GPU WARNING ###\n");
+    printf("Matrix was on device when trying to set!\n");
+    printf("\n###################\n");
   }
-  ((float*)self->nativePtr)[IDX2C(i,j,self->shape[1])] = x;
+  self->hostPtr[IDX2C(i,j,self->shape[1])] = x;
 }
 
 void setCudaMatrixRegionImpl(Matrix* self, int i, int j, int r, int c, float* data)
@@ -115,15 +105,16 @@ Matrix* newEmptyCudaMatrixImpl(int width, int height)
 {
   Matrix* m = (Matrix*)malloc(sizeof(Matrix));
   float* h_data = (float*)malloc(sizeof(float)*width*height);
+  memset(h_data,0,sizeof(float)*width*height);
   float* d_data;
   cudaMalloc(&d_data,sizeof(float)*width*height);
   int* shape = (int*)malloc(sizeof(int)*2);
-  shape[0] = width;
-  shape[1] = height;
+  shape[0] = height;
+  shape[1] = width;
 
   m->shape = shape;
-  m->nativePtr = (void*)h_data;
-  m->devicePtr = (void*)d_data;
+  m->hostPtr = h_data;
+  m->devicePtr = d_data;
   m->isHostSide = 1;
   m->T = CUBLAS_OP_N;
   m->getElement = getCudaMatrixElementImpl;
@@ -136,9 +127,8 @@ Matrix* newEmptyCudaMatrixImpl(int width, int height)
 Matrix* newCudaMatrixImpl(float* data, int width, int height)
 {
   Matrix* m = newEmptyCudaMatrixImpl(width,height);
-  free(m->nativePtr);
-  m->nativePtr = (void*)data;
-  //copyHostToDeviceCudaMatrix(m);
+  free(m->hostPtr);
+  m->hostPtr = data;
   return m;
 }
 //############ BEGIN MATH FUNCS ##################
@@ -157,12 +147,10 @@ void addCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B, Matrix* C)
   {
     copyHostToDeviceCudaMatrix(self,C);
   }
-  cudaStreamSynchronize(self->stream);
   copyDeviceToDeviceCudaMatrix(self,B,C);
-  cudaStreamSynchronize(self->stream);
-  cublasSetStream(self->cublasHandle,self->stream);
+  //cublasSetStream(self->cublasHandle,self->stream);
   float a = 1;
-  cublasSaxpy(self->cublasHandle,A->shape[0]*A->shape[1],&a,(float*)A->devicePtr,1,(float*)C->devicePtr,1);
+  cublasErrCheck(cublasSaxpy(self->cublasHandle,A->shape[0]*A->shape[1],&a,A->devicePtr,1,C->devicePtr,1));
 }
 
 //SUBTRACTION
@@ -180,12 +168,10 @@ void subtractCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B, Matrix* C)
   {
     copyHostToDeviceCudaMatrix(self,C);
   }
-  cudaStreamSynchronize(self->stream);
   copyDeviceToDeviceCudaMatrix(self,A,C);
-  cudaStreamSynchronize(self->stream);
-  cublasSetStream(self->cublasHandle,self->stream);
+  //cublasSetStream(self->cublasHandle,self->stream);
   float a = -1;
-  cublasSaxpy(self->cublasHandle,A->shape[0]*A->shape[1],&a,(float*)B->devicePtr,1,(float*)C->devicePtr,1);
+  cublasErrCheck(cublasSaxpy(self->cublasHandle,A->shape[0]*A->shape[1],&a,B->devicePtr,1,C->devicePtr,1));
 }
 
 //MULTIPLYCONST
@@ -199,9 +185,8 @@ void multiplyConstCudaMatrixImpl(MatrixUtil* self, Matrix* A, float b, Matrix* C
   {
     copyHostToDeviceCudaMatrix(self,C);
   }
-  cudaStreamSynchronize(self->stream);
-  cublasSetStream(self->cublasHandle,self->stream);
-  //TO DO!! WHICH CUBLAS FUNC!
+  //cublasSetStream(self->cublasHandle,self->stream);
+  cublasErrCheck(cublasSaxpy(self->cublasHandle,A->shape[0]*A->shape[1],&b,A->devicePtr,1,C->devicePtr,1));
 }
 
 //DOT
@@ -219,16 +204,16 @@ void dotCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B, Matrix* C)
   {
     copyHostToDeviceCudaMatrix(self,C);
   }
-  cudaStreamSynchronize(self->stream);
-  cublasSetStream(self->cublasHandle,self->stream);
+  //cublasSetStream(self->cublasHandle,self->stream);
   float alpha = 1;
   float beta = 0;
-  cublasSgemm(self->cublasHandle,A->T,B->T,A->shape[0],B->shape[1],A->shape[1],&alpha,(float*)A->devicePtr,A->shape[0],(float*)B->devicePtr,B->shape[0],&beta,(float*)C->devicePtr,C->shape[0]);
+  cublasErrCheck(cublasSgemm(self->cublasHandle,A->T,B->T,A->shape[0],B->shape[1],A->shape[1],&alpha,A->devicePtr,A->shape[0],B->devicePtr,B->shape[0],&beta,C->devicePtr,C->shape[0]));
 }
 
 void SetCUDAMatrixUtilStream(MatrixUtil* self, cudaStream_t stream)
 {
     self->stream = stream;
+    cublasSetStream(self->cublasHandle, stream);
 }
 
 void SetCUDAMatrixUtilDevice(MatrixUtil* self, int device)
@@ -236,13 +221,30 @@ void SetCUDAMatrixUtilDevice(MatrixUtil* self, int device)
   self->deviceId = device;
   cudaSetDevice(device);
 
-  cudaStream_t stream;
-  cudaStreamCreate(&stream);
-  SetCUDAMatrixUtilStream(self,stream);
-
   cublasHandle_t cublasHandle;
   cublasCreate(&cublasHandle);
   self->cublasHandle = cublasHandle;
+
+  cudaStream_t stream;
+  cudaStreamCreate(&stream);
+  SetCUDAMatrixUtilStream(self,stream);
+}
+
+void pprintCudaMatrixImpl(MatrixUtil* self, Matrix* A, char* label)
+{
+  printf("\n\n################################################");
+  printf("\n%s:\n\n",label);
+  copyDeviceToHostCudaMatrix(self,A);
+  for (int i = 0; i < A->shape[0]; i++)
+  {
+    for (int j = 0;j< A->shape[1];j++)
+    {
+      printf("[ %f ]",A->getElement(A,i,j));
+    }
+    //printf("|  %f",y->getElement(y,i,0));
+    printf("\n");
+  }
+  printf("\n################################################\n\n");
 }
 
 MatrixUtil* GetCUDAMatrixUtil(int device)
@@ -257,7 +259,6 @@ MatrixUtil* GetCUDAMatrixUtil(int device)
   cudaMatrixUtil->subtract = subtractCudaMatrixImpl;
   cudaMatrixUtil->dot = dotCudaMatrixImpl;
   cudaMatrixUtil->multiplyConst = multiplyConstCudaMatrixImpl;
-
 /*
   cudaMatrixUtil->multiply = multiplyCudaMatrixImpl;
   cudaMatrixUtil->divide = divideCudaMatrixImpl;

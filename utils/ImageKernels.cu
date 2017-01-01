@@ -1,10 +1,5 @@
-__device__ int IDX2CKernel(int i, int j, int td)
-{
-  return (i*td)+j;
-}
-
 // LocalMax
-__global__ void LocalMaxKernel(Npp32f* pSrc, Npp32f* pDst, NppiSize oSize, int windowWidth)
+__global__ void LocalMaxKernel(float* pSrc, float* pDst, NppiSize oSize, int windowWidth)
 {
   int y = (blockIdx.y * blockDim.y) + threadIdx.y;
   int x = (blockIdx.x * blockDim.x) + threadIdx.x;
@@ -12,7 +7,7 @@ __global__ void LocalMaxKernel(Npp32f* pSrc, Npp32f* pDst, NppiSize oSize, int w
   int offset = (y*windowWidth*oSize.width) + (x*windowWidth);
   int row = (offset/oSize.width);
   int maxIdx = offset;
-  Npp32f maxVal = pSrc[offset];
+  float maxVal = pSrc[offset];
   int totalLength = oSize.width*oSize.height;
   for (int i = 0; i < windowWidth; i ++)
   {
@@ -21,7 +16,7 @@ __global__ void LocalMaxKernel(Npp32f* pSrc, Npp32f* pDst, NppiSize oSize, int w
       int srcOffset = (row*oSize.width) + (oSize.width*i) + (x*windowWidth) + j;
       if (srcOffset < totalLength)
       {
-        Npp32f thisVal = pSrc[srcOffset];
+        float thisVal = pSrc[srcOffset];
         if (thisVal > maxVal)
         {
           maxVal = thisVal;
@@ -33,7 +28,7 @@ __global__ void LocalMaxKernel(Npp32f* pSrc, Npp32f* pDst, NppiSize oSize, int w
   pDst[maxIdx] = maxVal;
 }
 
-__global__ void LocalMaxIdxKernel(Npp32f* pSrc, Npp32f* pDst, int* pIdx, NppiSize oSize, int windowWidth)
+__global__ void LocalMaxIdxKernel(float* pSrc, float* pDst, int* pIdx, NppiSize oSize, int windowWidth)
 {
   int y = (blockIdx.y * blockDim.y) + threadIdx.y;
   int x = (blockIdx.x * blockDim.x) + threadIdx.x;
@@ -41,7 +36,7 @@ __global__ void LocalMaxIdxKernel(Npp32f* pSrc, Npp32f* pDst, int* pIdx, NppiSiz
   int offset = (y*windowWidth*oSize.width) + (x*windowWidth);
   int row = (offset/oSize.width);
   int maxIdx = offset;
-  Npp32f maxVal = pSrc[offset];
+  float maxVal = pSrc[offset];
   int totalLength = oSize.width*oSize.height;
   for (int i = 0; i < windowWidth; i ++)
   {
@@ -50,7 +45,7 @@ __global__ void LocalMaxIdxKernel(Npp32f* pSrc, Npp32f* pDst, int* pIdx, NppiSiz
       int srcOffset = (row*oSize.width) + (oSize.width*i) + (x*windowWidth) + j;
       if (srcOffset < totalLength)
       {
-        Npp32f thisVal = pSrc[srcOffset];
+        float thisVal = pSrc[srcOffset];
         if (thisVal > maxVal)
         {
           maxVal = thisVal;

@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include "Matrix.h"
 
 typedef struct MatrixUtil MatrixUtil;
@@ -38,13 +37,11 @@ struct MatrixUtil
   m1Func ceil;
   m1Func floor;
   m1Func abs;
-  mTFunc transpose;
   m1m2rFunc dot;
   m1m2rFunc cross;
   mTFunc inv;
   mSFunc solve;
   mSFunc lstsq;
-  m1m2rFunc convolve;
   prettyPrintFunc pprint;
 };
 

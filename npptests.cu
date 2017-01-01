@@ -1,7 +1,8 @@
-#include <nppi.h>
+#include <stdio.h>
 #include <string.h>
+#include "utils/CUDAImageUtil.cu"
 #include "cv/Filters.c"
-#include <cuda_profiler_api.h>
+
 
 int main(int argc, char const *argv[]) {
   printf("\n################################");
@@ -48,8 +49,8 @@ int main(int argc, char const *argv[]) {
   }
 
   printf("Path: %s\n\n",path);
-
-  ImageUtil* imutil = GetImageUtil(1);
+  MatrixUtil* matutil = GetCUDAMatrixUtil(1);
+  ImageUtil* imutil = GetCUDAImageUtil(matutil);
   //Load the image
   Image* in = imutil->loadImageFromFile(imutil,path);
   Image* im = imutil->resample(imutil,in,256,256);
@@ -63,7 +64,7 @@ int main(int argc, char const *argv[]) {
   //Find corners (local maximums)
   Image* corners = imutil->max(imutil,DoGImage,mw);
   //Save image
-  imutil->saveImageToFile(imutil,im,saves);
+  imutil->saveImageToFile(imutil,corners,saves);
   printf("\n\n################################");
   printf("\n################################\n");
   return 0;

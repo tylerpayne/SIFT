@@ -1,8 +1,9 @@
 #include <stdlib.h>
-#include "Image.h"
-#include "lodepng/lodepng.c"
 #include <math.h>
 #include <nppcore.h>
+
+#include "Image.h"
+#include "lodepng/lodepng.c"
 #include "ImageKernels.cu"
 
 typedef struct ImageIndexPair ImageIndexPair;
@@ -38,8 +39,7 @@ typedef Image* (*generateGaussFunc)(ImageUtil*,int,float);
 
 struct ImageUtil
 {
-  int deviceId;
-  cudaStream_t stream;
+  MatrixUtil* matutil;
   newEmptyImageFunc newEmptyImage;
   newImageFromHostFloatFunc newImage;
   downsampleImageFunc resample;
@@ -56,4 +56,5 @@ struct ImageUtil
   rIMGVimFunc gradients;
 };
 
-ImageUtil* GetImageUtil(int cudaDeviceId);
+ImageUtil* GetImageUtil(MatrixUtil* matutil);
+ImageUtil* GetCUDAImageUtil(MatrixUtil* matutil);

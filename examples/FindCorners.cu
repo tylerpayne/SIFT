@@ -1,6 +1,3 @@
-#include <nppi.h>
-#include <string.h>
-#include "cv/Filters.c"
 
 //###########################################
 // compile with: nvcc -o OUTPUT_NAME -lnppc -lnppi -lcublas ___.cu
@@ -8,6 +5,12 @@
 // IT IS A SYNTACTIC EXAMPLE OF HOW TO USE THE LIBRARY
 //  TODO: MAKEFILE!!!!
 //##########################################
+
+#include <stdio.h>
+#include <string.h>
+#include "utils/CUDAImageUtil.cu"
+#include "cv/Filters.c"
+
 
 int main(int argc, char const *argv[]) {
   printf("\n################################");
@@ -54,10 +57,13 @@ int main(int argc, char const *argv[]) {
   }
 
   printf("Path: %s\n\n",path);
-
-  ImageUtil* imutil = GetImageUtil(1);
+  //Get CUDA implementation of MatrixUtil
+  MatrixUtil* matutil = GetCUDAMatrixUtil(1);
+  //Get CUDA ImageUtil Implementaiton
+  ImageUtil* imutil = GetCUDAImageUtil(matutil);
   //Load the image
-  Image* im = imutil->loadImageFromFile(imutil,path);
+  Image* in = imutil->loadImageFromFile(imutil,path);
+  Image* im = imutil->resample(imutil,in,256,256);
   //Create the two gaussians
   Image* gauss1 = MakeGaussianKernel(imutil,gw,g1s);
   Image* gauss2 = MakeGaussianKernel(imutil,gw,g2s);

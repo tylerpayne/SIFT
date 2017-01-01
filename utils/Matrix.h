@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include <cuda_runtime.h>
 #include "cublas_v2.h"
 
@@ -20,8 +19,8 @@ typedef void (*setMatrixRegionFunc)(Matrix*, int,int,int,int, float*);
 struct Matrix
 {
   int* shape;
-  void* nativePtr;
-  void* devicePtr;
+  float* hostPtr;
+  float* devicePtr;
   int isHostSide;
   cublasOperation_t T;
   voidFunc transpose;
@@ -34,4 +33,12 @@ struct Matrix
 static int IDX2C(int i, int j, int td)
 {
   return (i*td)+j;
+}
+
+static int* C2IDX(int i, int td)
+{
+  int* retval = (int*)malloc(sizeof(int)*2);
+  retval[0] = i/td;
+  retval[1] = i-retval[0];
+  return retval;
 }

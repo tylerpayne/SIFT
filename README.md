@@ -1,16 +1,13 @@
 # computervision (UNDER DEVELOPMENT)
 
-A collection of computer vision, data structures, and math utilites all implemented in C and accelerated with [CUDA v8.0].
-
-Compile CUDA implementations with:
-    ```nvcc -o EXE_NAME -lnppc -lnppi -lcublas -lcusolver FILENAME.cu```
+A collection of computer vision, data structures, and math utilities all implemented in C and accelerated with [CUDA v8.0].
 
 # Design Notes
-This library is designed with an Object Oriented architecture. This greatly simplifies the user-facing code and enables the math and image utilites to be platform-agnostic by allowing for abstract definitions and concrete implementations.
+This library is designed with an Object Oriented architecture. This greatly simplifies the user-facing code and enables the math and image utilities to be platform-agnostic by allowing for abstract definitions and concrete implementations.
 
-A minor annoyance of using this design in the C language is the need to pass a `self` argument to functions. (e.g. `imutil->convolve(imutil,image,kernel)`)
+A minor annoyance of using this design in the C language is the need to pass a `self` argument to functions. \n(e.g. `imutil->convolve(imutil,image,kernel)`)
 
-Furthermore: All functions assume they are operating on 32 bit floating point numbers (`float,Npp32f`) (if using CUDA, all Images are in device memory unless explicitly stated otherwise.)
+Furthermore: All functions assume they are operating on 32 bit floating point numbers (`float, Npp32f`)
 
 # Core Components:
 
@@ -27,15 +24,18 @@ A [CUBLAS] and [CUSOLVER] implementation of the MatrixUtil.
 For now, see my other repo [MetalUnity].
 
 ## [ImageUtil]
+The abstract definition of the ImageUtil class, allowing concrete implementations for different platforms (i.e. CUDA, Metal). ImageUtil depends on MatrixUtil's Matrix initializers for the low level representations of images.
 
 ##### File Handling
 (only PNGs are supported currently)
 All file handling is currently done with [lodepng]
 
-##### NPP
-Currently, the ImageUtil class is a concrete implementation, unlike the MatrixUtil class. It uses the [Nvidia Performance Primitives] library to perform common arithmetic, geometric and statistical operations on Images.
+### [CUDAImageUtil]
 
-ToDo: Abstract this class and use MatrixUtil as low level image representations, not Npp32f.
+##### NPP
+ CUDAImageUtil uses the [Nvidia Performance Primitives] library to perform common arithmetic, geometric and statistical operations on Images.
+
+
 
 # Example
 ```C
@@ -45,13 +45,14 @@ ToDo: Abstract this class and use MatrixUtil as low level image representations,
   int mw = 15; // Width of LocalMax window
   char* saves = "DoG.png"; // Filepath to save to
   char* path = "image.png"; // Filepath to load from
-  //Grab ImageUtil
-  ImageUtil* imutil = GetImageUtil(1); // 1 refers to CUDA Device Id
+  MatrixUtil* matutil = GetCUDAMatrixUtil(1); // Get CUDA MatrixUtil
+  ImageUtil* imutil = GetCUDAImageUtil(matutil); // Get CUDA Image Util
   //Load the image
-  Image* im = imutil->loadImageFromFile(imutil,path);
+  Image* in = imutil->loadImageFromFile(imutil,path);
+  Image* im = imutil->resample(imutil,in,256,256);
   //Create the two gaussians
-  Image* gauss1 = MakeGaussianKernel(imutil,gw,g1s); // defined in cv/Filters.c
-  Image* gauss2 = MakeGaussianKernel(imutil,gw,g2s); // defined in cv/Filters.c
+  Image* gauss1 = MakeGaussianKernel(imutil,gw,g1s);
+  Image* gauss2 = MakeGaussianKernel(imutil,gw,g2s);
   //Get difference of gaussian kernel
   Image* DoGKernel = imutil->subtract(imutil,gauss1,gauss2);
   //Convolve

@@ -64,7 +64,7 @@ int main(int argc, char const *argv[]) {
   //Find corners (local maximums)
   Image* corners = imutil->max(imutil,DoGImage,mw);
   //Save image
-  imutil->saveImageToFile(imutil,im,saves);
+  imutil->saveImageToFile(imutil,corners,saves);
   printf("\n\n################################");
   printf("\n################################\n");
   return 0;

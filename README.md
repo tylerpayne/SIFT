@@ -74,5 +74,6 @@ All file handling is currently done with [lodepng]
 [PrimitiveMatrixUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/PrimitiveMatrixUtil.c
 [CUDAMatrixUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/CUDAMatrixUtil.cu
 [ImageUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/ImageUtil.h
+[CUDAImageUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/CUDAImageUtil.h
 [lena]:https://github.com/tylerpayne/computervision/blob/master/lena256.png
 [corners]:https://github.com/tylerpayne/computervision/blob/master/lenacorners.png

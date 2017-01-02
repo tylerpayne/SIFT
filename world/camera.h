@@ -2,7 +2,7 @@ typedef struct Camera Camera;
 
 struct Camera
 {
-  float* K;
-  float* R;
+  Matrix* K;
+  Matrix* R;
   Image* frame;
 };

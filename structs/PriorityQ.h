@@ -1,5 +1,4 @@
-#include <stdlib.h>
-#include "LinkedList.c"
+#include "Heap.c"
 
 typedef struct PriorityQ PriorityQ;
 
@@ -8,7 +7,7 @@ typedef ListNode* (*deqFunc)(PriorityQ* self);
 
 struct PriorityQ
 {
-  LinkedList* list;
+  Heap* heap;
   enqFunc enQ;
   deqFunc deQ;
 };

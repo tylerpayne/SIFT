@@ -1,6 +1,6 @@
 #include "List.h"
 #include <string.h>
-
+//Get Node by String Key
 ListNode* getSImpl(List* self, char* key)
 {
   if (self->count > 0)
@@ -22,6 +22,7 @@ ListNode* getSImpl(List* self, char* key)
   }
 }
 
+//Get Node by Int Key
 ListNode* getIImpl(List* self, int idx)
 {
   if (idx < self->count)
@@ -43,6 +44,7 @@ ListNode* getIImpl(List* self, int idx)
   }
 }
 
+//Get Node by FLoat Key
 ListNode* getFImpl(List* self, float key)
 {
   if (self->count > 0)
@@ -55,13 +57,21 @@ ListNode* getFImpl(List* self, float key)
   }
 }
 
-ListNode* getImpl(List* self, dictKey idx)
+//Generic Get
+ListNode* getImpl(List* self, Key idx)
 {
   if (idx.sval != NULL)
   {
     return getSImpl(self,idx.sval);
   }
-  return getIImpl(self,idx.ival);
+  if (idx.fval != NULL)
+  {
+    return getFImpl(self,idx.fval);
+  }
+  if (idx.ival != NULL)
+  {
+    return getIImpl(self,idx.ival);
+  }
 }
 
 
@@ -93,6 +103,7 @@ void removeImpl(List* self, int idx)
   }
   self->count--;
 }
+
 
 ListNode* popImpl(List* self, int idx)
 {
@@ -128,8 +139,7 @@ void appendImpl(List* self, ListNode* node)
       self->count = 1;
     } else
     {
-      self->lastNode->nextNode = node;
-      node->prevNode = self->lastNode;
+      self->lastNode->insertAfter(self->lastNode,node);
       self->lastNode = node;
       node->key.ival = self->count;
       self->count++;
@@ -141,14 +151,9 @@ void insertImpl(List *self, ListNode* node, int idx)
   if (idx < self->count)
   {
     ListNode* insertBefore = self->getIndex(self,idx);
-    if (insertBefore->prevNode != NULL)
-    {
-      insertBefore->prevNode->nextNode = node;
-      node->prevNode = insertBefore->prevNode;
-    }
-    insertBefore->prevNode = node;
-    node->nextNode = insertBefore;
+    insertBefore->insertBefore(insertBefore,node);
     node->key.ival = idx;
+    insertBefore->key.ival = idx+1;
     if (idx==0)
     {
       self->firstNode = node;
@@ -159,8 +164,6 @@ void insertImpl(List *self, ListNode* node, int idx)
     self->append(self,node);
   }
 }
-
-
 
 List* NewList()
 {

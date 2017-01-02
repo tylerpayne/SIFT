@@ -1,5 +1,3 @@
-#include <stdlib.h>
-
 typedef struct ListNode ListNode;
 
 typedef void (* insertHereFunc)(ListNode* self, ListNode* n);
@@ -8,12 +6,12 @@ typedef struct {
   int ival;
   float fval;
   char* sval;
-} dictKey;
+} Key;
 
 struct ListNode
 {
   void* value;
-  dictKey key;
+  Key key;
   ListNode* nextNode;
   ListNode* prevNode;
   insertHereFunc insertBefore;

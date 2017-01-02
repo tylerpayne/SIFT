@@ -12,6 +12,7 @@ struct ImageIndexPair
 {
   Image* image;
   int* index;
+  int n;
 };
 
 typedef struct ImageGradientVectorPair ImageGradientVectorPair;

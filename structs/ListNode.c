@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include "ListNode.h"
 
 void insertBeforeImpl(ListNode* self, ListNode* n)

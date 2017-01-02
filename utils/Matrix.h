@@ -29,12 +29,13 @@ struct Matrix
   setMatrixElementFunc setElement;
   setMatrixRegionFunc setRegion;
 };
-
+// (i,j) == (row,col)
 static int IDX2C(int i, int j, int td)
 {
   return (i*td)+j;
 }
 
+// (retval[0],retval[1]) == (i,j)
 static int* C2IDX(int i, int td)
 {
   int* retval = (int*)malloc(sizeof(int)*2);

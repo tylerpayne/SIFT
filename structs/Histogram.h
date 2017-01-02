@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include "LinkedList.h"
+#include "List.h"
 
 typedef struct Histogram Histogram;
 
@@ -12,7 +12,7 @@ struct Histogram
   float binRange;
   int nbins;
   float* binTotals;
-  LinkedList* bins;
+  List* bins;
   addFunc add;
   addFunc addTrilinearInterpolate;
   maxBinFunc maxBin;

@@ -7,7 +7,7 @@ void addImpl(Histogram* self, float val)
   {
     if (val > (i*perBinRange) && val <= (i*perBinRange)+perBinRange)
     {
-      ((LinkedList*)self->bins->get(self->bins,i)->value)->add(NewListNode((void*)&val));
+      ((List*)self->bins->get(self->bins,i)->value)->add(NewListNode((void*)&val));
       self->binTotals[i] += val;
       break;
     }
@@ -21,18 +21,18 @@ void addTrilinearInterpolateImpl(Histogram* self, float val)
   {
     if (val > (i*perBinRange) && val <= (i*perBinRange)+perBinRange)
     {
-      ((LinkedList*)self->bins->get(self->bins,i)->value)->add(NewListNode((void*)&val));
+      ((List*)self->bins->get(self->bins,i)->value)->add(NewListNode((void*)&val));
       float rbinSpill = ((val - (perBinRange/2.0))/(perBinRange/2.0))+0.5;
       float lbinSpill = 1 - rbinSpill;
       rbinSpill = rbinSpill*val;
       lbinSpill = lbinSpill*val;
       if (i > 0)
       {
-          ((LinkedList*)self->bins->get(self->bins,i-1)->value)->add(NewListNode((void*)&lbinSpill));
+          ((List*)self->bins->get(self->bins,i-1)->value)->add(NewListNode((void*)&lbinSpill));
       }
       if (i < self->nbins - 1)
       {
-          ((LinkedList*)self->bins->get(self->bins,i+1)->value)->add(NewListNode((void*)&rbinSpill));
+          ((List*)self->bins->get(self->bins,i+1)->value)->add(NewListNode((void*)&rbinSpill));
       }
       self->binTotals[i] += val;
       self->binTotals[i-1] += lbinSpill;
@@ -82,11 +82,11 @@ Histogram* NewHistogram(float range, int nbins)
   Histogram* histogram = (Histogram*)malloc(sizeof(Histogram));
   histogram->binRange = range;
   histogram->nbins = nbins;
-  histogram->binTotals = *float[nbins];
-  histogram->bins = NewLinkedList();
+  histogram->binTotals = (float*)malloc(sizeof(float)*nbins);
+  histogram->bins = NewList();
   for (int i = 0; i < nbins; i++)
   {
-    LinkedList* bin = NewLinkedList();
+    List* bin = NewList();
     ListNode* n = NewListNode((void*)bin);
     histogram->bins->append(histogram->bins,n);
   }

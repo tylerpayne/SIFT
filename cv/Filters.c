@@ -1,4 +1,6 @@
-Image* MakeGaussianKernel(ImageUtil* self, int width, float std)
+#include "Filters.h"
+
+Image* makeGaussianKernelImpl(Filters* self, int width, float std)
 {
   float* data = (float*)malloc(sizeof(float)*width*width);
   int radius = width/2;
@@ -24,7 +26,15 @@ Image* MakeGaussianKernel(ImageUtil* self, int width, float std)
     data[r] = data[r]/sum;
   }
 
-  return self->newImage(self,data,width,width);
+  return self->imutil->newImage(self,data,width,width);
+}
+
+Filters* NewFilters(ImageUtil* imutil)
+{
+  Filters* self = (Filters*)malloc(sizeof(Filters));
+  self->imutil = imutil;
+  self->makeGaussianKernel = makeGaussianKernelImpl;
+  return self;
 }
 /*
 Image* MakeSobelKernels(ImageUtil* imutil)

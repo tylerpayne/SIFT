@@ -372,7 +372,7 @@ Image* maxImageImpl(ImageUtil* self, Image* im, int radius)
 
   return retval;
 }
-/*
+
 ImageIndexPair maxIdxImageImpl(ImageUtil* self, Image* im, int radius)
 {
   Image* dst = self->newEmptyImage(self,im->shape.width,im->shape.height);
@@ -388,12 +388,12 @@ ImageIndexPair maxIdxImageImpl(ImageUtil* self, Image* im, int radius)
   int bdimY = fmin(32,hregions);
   dim3 bdim(bdimX,bdimY);
   dim3 gdim(wregions/bdimX,hregions/bdimY);
-  //LocalMaxIdxKernel<<<gdim,bdim>>>(pSrc,pDst,pIdx,oSize,radius);
+  LocalMaxIdxKernel<<<gdim,bdim,0,self->matutil->stream>>>(pSrc,pDst,pIdx,oSize,radius);
 
-  ImageIndexPair retval = {dst,pIdx};
+  ImageIndexPair retval = {dst,pIdx,wregions*hregions};
 
   return retval;
-}*/
+}
 //##############
 //END STATISTICS
 //##############

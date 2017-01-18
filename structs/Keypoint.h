@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include "List.c"
 
 typedef struct Keypoint Keypoint;

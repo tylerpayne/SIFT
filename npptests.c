@@ -51,16 +51,18 @@ int main(int argc, char const *argv[]) {
   printf("Path: %s\n\n",path);
   MatrixUtil* matutil = GetCUDAMatrixUtil(1);
   ImageUtil* imutil = GetCUDAImageUtil(matutil);
+  Filters* filters = NewFilters(imutil);
   //Load the image
   Image* in = imutil->loadImageFromFile(imutil,path);
-  Image* im = imutil->resample(imutil,in,256,256);
+  //Image* im = imutil->resample(imutil,in,256,256);
   //Create the two gaussians
-  Image* gauss1 = MakeGaussianKernel(imutil,gw,g1s);
-  Image* gauss2 = MakeGaussianKernel(imutil,gw,g2s);
+  Image* gauss1 = filters->makeGaussianKernel(filters,gw,g1s);
+  Image* gauss2 = filters->makeGaussianKernel(filters,gw,g2s);
   //Get difference of gaussian kernel
   Image* DoGKernel = imutil->subtract(imutil,gauss1,gauss2);
   //Convolve
-  Image* DoGImage = imutil->convolve(imutil,im,DoGKernel);
+  Image* DoGImage = imutil->convolve(imutil,in,DoGKernel);
+  //printf("Width: %i, Height: %i",in->shape.width,in->shape.height);
   //Find corners (local maximums)
   Image* corners = imutil->max(imutil,DoGImage,mw);
   //Save image

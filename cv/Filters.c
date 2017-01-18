@@ -26,7 +26,7 @@ Image* makeGaussianKernelImpl(Filters* self, int width, float std)
     data[r] = data[r]/sum;
   }
 
-  return self->imutil->newImage(self,data,width,width);
+  return self->imutil->newImage(self->imutil,data,width,width);
 }
 
 Filters* NewFilters(ImageUtil* imutil)

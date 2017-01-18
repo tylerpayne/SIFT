@@ -2,12 +2,6 @@ typedef struct ListNode ListNode;
 
 typedef void (* insertHereFunc)(ListNode* self, ListNode* n);
 
-typedef struct {
-  int ival;
-  float fval;
-  char* sval;
-} Key;
-
 struct ListNode
 {
   void* value;

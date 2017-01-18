@@ -2,14 +2,15 @@
 
 typedef struct PriorityQ PriorityQ;
 
-typedef void (*enqFunc)(PriorityQ* self, ListNode *, float);
-typedef ListNode* (*deqFunc)(PriorityQ* self);
+typedef void (*enqFunc)(PriorityQ* self, TreeNode *, float);
+typedef TreeNode* (*deqFunc)(PriorityQ* self);
 
 struct PriorityQ
 {
+  int size;
   Heap* heap;
   enqFunc enQ;
   deqFunc deQ;
 };
 
-PriorityQ* NewPriorityQ();
+PriorityQ* NewPriorityQ(int capacity);

@@ -6,7 +6,7 @@ ListNode* getSImpl(List* self, char* key)
   if (self->count > 0)
   {
     ListNode* n = self->firstNode;
-    while (strcmp(n->key.sval,key) == 1)
+    while (strcmp(n->key.sval,key) != 0 && n != NULL)
     {
       if (n->nextNode == NULL)
       {
@@ -60,18 +60,15 @@ ListNode* getFImpl(List* self, float key)
 //Generic Get
 ListNode* getImpl(List* self, Key idx)
 {
-  if (idx.sval != NULL)
+  if (idx.type == STRING)
   {
     return getSImpl(self,idx.sval);
   }
-  if (idx.fval != NULL)
+  if (idx.type == FLOAT)
   {
     return getFImpl(self,idx.fval);
   }
-  if (idx.ival != NULL)
-  {
-    return getIImpl(self,idx.ival);
-  }
+  return getIImpl(self,idx.ival);
 }
 
 

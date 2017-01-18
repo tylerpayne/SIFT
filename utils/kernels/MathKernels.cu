@@ -1,11 +1,76 @@
-#include <cuda_runtime.h>
-//#####################
-//#### OUTDATED! ######
-//#####################
+#include <math_constants.h>
+
 __device__ int IDX2CKernel(int i, int j, int td)
 {
   return (i*td)+j;
 }
+
+__global__ void PowMatrixKernel(float* A, float B, float* C, int ld, int td)
+{
+  int i = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (i < ld*td)
+  {
+    C[i] = powf(A[i],B);
+  }
+}
+
+__global__ void TransposeMatrixKernel(float* A, float* C, int ld, int td)
+{
+  int y = (blockIdx.y * blockDim.y) + threadIdx.y;
+  int x = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (y<ld && x < td)
+  {
+    C[IDX2CKernel(x,y,ld)] = A[IDX2CKernel(y,x,td)];
+  }
+}
+
+__global__ void FeatureDistanceMatrixKernel(float* A, int lda, float* B, int ldb, float* C, int nDim)
+{
+  int y = (blockIdx.y * blockDim.y) + threadIdx.y;
+  int x = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (y < lda && x < ldb)
+  {
+    float accum = 0;
+    for (int i = 0; i < nDim; i++)
+    {
+      float diff = B[IDX2CKernel(x,i,nDim)] - A[IDX2CKernel(y,i,nDim)];
+      accum += diff*diff;
+    }
+    C[IDX2CKernel(y,x,ldb)] = accum/(float)nDim;
+  }
+}
+
+__global__ void Cross3X3MatrixKernel(float* A, float* Ax)
+{
+  Ax[IDX2CKernel(0,1,3)] = -1.0*A[2];
+  Ax[IDX2CKernel(0,2,3)] = A[1];
+  Ax[IDX2CKernel(1,2,3)] = -1.0*A[0];
+
+  Ax[IDX2CKernel(1,0,3)] = A[2];
+  Ax[IDX2CKernel(2,0,3)] = -1.0*A[1];
+  Ax[IDX2CKernel(2,1,3)] = A[0];
+}
+
+__global__ void CopyMatrixKernel(float* A, int lda, int tda, Point2 Aidx, float* B, int ldb, int tdb, Point2 Bidx, Rect size)
+{
+  int y = (blockIdx.y * blockDim.y) + threadIdx.y;
+  int x = (blockIdx.x * blockDim.x) + threadIdx.x;
+
+  int thisA, thisB;
+  thisA = (Aidx.y + y)*tda + (Aidx.x + x);
+  thisB = (Bidx.y + y)*tdb + (Bidx.x + x);
+  if (y < size.height && x < size.width)
+  {
+    B[thisB] = A[thisA];
+  }
+
+}
+
+/*
+//#####################
+//#### OUTDATED! ######
+//#####################
+
 
 //ADDITION
 __global__ void MatAdd(float* A, float* B, float* C,int ld, int td)
@@ -247,3 +312,5 @@ __global__ void MatDot(float* A, float* B, float* C, int ald, int cd, int bld)
     C[IDX2CKernel(row,col,cd)] = retval;
   }
 }
+
+*/

@@ -1,4 +1,9 @@
+#include <math_constants.h>
 
+__device__ int IDX2CKernel(int i, int j, int td)
+{
+  return (i*td)+j;
+}
 // LocalMax
 __global__ void LocalMaxKernel(float* pSrc, float* pDst, NppiSize oSize, int windowWidth)
 {
@@ -231,15 +236,13 @@ __device__ float ReadSubPixelKernel(float* pSrc, NppiSize oSize, float x, float 
 {
   int Xidx = (int)floorf(x);
   int Yidx = (int)floorf(y);
-  float ix = floorf(x);
-  float iy = floorf(x);
   float accum = 0;
   for (int v = -2; v <= 2; v++)
   {
     for (int u = -2; u <= 2; u++)
     {
-      float thisV = iy + v;
-      float thisU = ix + u;
+      float thisV = y - v;
+      float thisU = x - u;
       float k = GetBiCubicKernelWeight(sqrtf((thisV*thisV)+(thisU*thisU)));
       accum += pSrc[IDX2CKernel(Yidx+v,Xidx+u,oSize.width)]*k;
     }
@@ -266,37 +269,44 @@ __global__ void MakeFeatureDescriptorKernel(float* pSrc, NppiSize oSize, float* 
   }
 }
 
-__global__ void SubPixelAlignKernel(float* pIx, float* pIy, int* pIdx, float* pSubPixelX, float* pSubPixelY, NppiSize oSize, int nIdx)
+__global__ void SubPixelAlignKernel(float* pI, float* pIx, float* pIy, int* pIdx, float* pSubPixelX, float* pSubPixelY, NppiSize oSize, int nIdx)
 {
   int x = (blockIdx.x * blockDim.x) + threadIdx.x;
+
+  float I;
   float Ix;
   float Iy;
-  float Ixx;
-  float Iyy;
-  float Ixy;
-  float Iyx;
 
-  float dX;
-  float dY;
+  float dX = 0;
+  float dY = 0;
   if (x < nIdx)
   {
     int thisIdx = pIdx[x];
     int row = (thisIdx/oSize.width);
     int col = thisIdx - (row*oSize.width);
-    if (row > 0 && row < oSize.height-1 && col > 0 && col < oSize.width-1)
-    {
-      Ix = pIx[IDX2CKernel(row,col,oSize.width)];
-      Iy = pIy[IDX2CKernel(row,col,oSize.width)];
+      int idx = IDX2CKernel(row,col,oSize.width);
+      I = pI[idx];
+      Ix = pIx[idx];
+      Iy = pIy[idx];
 
-      Ixx = (Ix + 0.5*(pIx[IDX2CKernel(row,col+1,oSize.width)] - Ix)) - (Ix - 0.5*(Ix - pIx[IDX2CKernel(row,col-1,oSize.width)]));
-      Ixy = (Ix + 0.5*(pIx[IDX2CKernel(row+1,col,oSize.width)] - Ix)) - (Ix - 0.5*(Ix - pIx[IDX2CKernel(row-1,col,oSize.width)]));
-      Iyy = (Iy + 0.5*(pIy[IDX2CKernel(row+1,col,oSize.width)] - Iy)) - (Iy - 0.5*(Iy - pIy[IDX2CKernel(row-1,col,oSize.width)]));
-      Iyx = (Iy + 0.5*(pIy[IDX2CKernel(row,col+1,oSize.width)] - Iy)) - (Iy - 0.5*(Iy - pIy[IDX2CKernel(row,col-1,oSize.width)]));
+      float frow = (float)row;
+      float fcol = (float)col;
 
-      dX = (-1.0*Ixx)*Ix + (-1.0*Ixy)*Iy;
-      dY = (-1.0*Iyx)*Ix + (-1.0*Iyy)*Iy;
-      pSubPixelX[x] = ((float)row)+dX;
-      pSubPixelY[x] = ((float)col)+dY;
-    }
+      if (Ix != 0)
+      {
+        dX = I/Ix + fcol;
+      } else
+      {
+        dX = fcol;
+      }
+      if (Iy != 0)
+      {
+        dY = I/Iy + frow;
+      } else
+      {
+        dY = frow;
+      }
+      pSubPixelY[x] = dY;
+      pSubPixelX[x] = dX;
   }
 }

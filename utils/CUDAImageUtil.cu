@@ -1,7 +1,11 @@
-#include "CUDAMatrixUtil.cu"
+#include "MatrixUtil.h"
 #include "ImageUtil.h"
 #include <nppi.h>
 #include "kernels/ImageKernels.cu"
+
+#ifdef __cplusplus
+  extern "C" {
+#endif
 
 void nppCallErrCheck(NppStatus status)
 {
@@ -15,9 +19,20 @@ void nppCallErrCheck(NppStatus status)
 //#############
 //INIT Methods
 //############
+void syncDeviceFromHostImpl(Image* self)
+{
+  copyHostToDeviceCudaMatrix(self->pixels);
+}
+
+void syncHostFromDeviceImpl(Image* self)
+{
+  copyDeviceToHostCudaMatrix(self->pixels);
+}
+
 void freeImageImpl(Image* self)
 {
   self->pixels->free(self->pixels);
+  free(self->pixbuf);
   free(self);
 }
 
@@ -35,7 +50,8 @@ Image* newEmptyImageImpl(ImageUtil* self, int width, int height)
   im->shape = shape;
   im->pixels=self->matutil->newEmptyMatrix(height,width);
   im->free = freeImageImpl;
-  copyHostToDeviceCudaMatrix(self->matutil,im->pixels);
+  im->syncHostFromDevice = syncHostFromDeviceImpl;
+  im->syncDeviceFromHost = syncDeviceFromHostImpl;
   return im;
 }
 
@@ -48,7 +64,6 @@ Image* newImageImpl(ImageUtil* self, float* data, int width, int height)
   Image* im = self->newEmptyImage(self,width,height);
   free(im->pixels->hostPtr);
   im->pixels->hostPtr = data;
-  copyHostToDeviceCudaMatrix(self->matutil,im->pixels);
   return im;
 }
 
@@ -59,76 +74,13 @@ Image* newImageFromMatrixImpl(ImageUtil* self, Matrix* m)
     printf("CREATING NEW IMAGE FROM MATRIX\n");
   }
   Image* im = self->newEmptyImage(self,m->shape[1],m->shape[0]);
-  free(im->pixels->hostPtr);
+  im->pixels->free(im->pixels);
   im->pixels = m;
-  im->free = freeImageImpl;
   return im;
 }
 //#################
 //END INIT METHODS
 //################
-
-//#############
-//FILE HANDLING
-//#############
-/*
-void saveImageToFileImpl(ImageUtil* self, Image* im, char* p)
-{
-  if (VERBOSITY > 0)
-  {
-      printf("###########    Saving File: ' %s '   ############",p);
-  }
-  cudaDeviceSynchronize();
-  if (!(im->pixels->isHostSide))
-  {
-    copyDeviceToHostCudaMatrix(self->matutil,im->pixels);
-  }
-  cudaDeviceSynchronize();
-  float* pix = im->pixels->hostPtr;
-  const char* path = p;
-  unsigned char* saveim = (unsigned char*)malloc(sizeof(unsigned char)*im->shape[0]*im->shape[1]*4);
-  int pixelcount = 0;
-
-  float mmm = 0.0;
-  for (int k=0; k<(im->shape[0] * im->shape[1]); k++)
-  {
-    if (fabsf(pix[k])> mmm)
-    {
-      mmm = fabsf(pix[k]);
-    }
-  }
-  if (mmm != 1.0)
-  {
-    for (int j=0; j<(im->shape[0] * im->shape[1]); j++)
-    {
-      //printf("[ %f ]",pix[j]);
-      pix[j] =fabsf(pix[j])/mmm;
-    }
-  }
-  if (VERBOSITY > 1)
-  {
-    printf("\nSaved Image Pixel Maximum: %f\n",mmm);
-  }
-  for (int i = 0; i < im->shape[0]*im->shape[1]*4; i+=4)
-  {
-    saveim[i] = pix[pixelcount] * 255.0;
-    saveim[i+1] = pix[pixelcount] * 255.0;;
-    saveim[i+2] = pix[pixelcount] * 255.0;;
-    saveim[i+3] = 255;
-    pixelcount++;
-  }
-
-  unsigned error = lodepng_encode32_file(path, saveim, im->shape[0], im->shape[1]);
-
-  if (error)
-  {
-    printf("error %u: %s\n", error, lodepng_error_text(error));
-  }
-}
-*/
-//##################
-//END FILE HANDLING
-//#################
 
 //#######
 //FILTERS
@@ -136,6 +88,19 @@ void saveImageToFileImpl(ImageUtil* self, Image* im, char* p)
 Image* convolveImageImpl(ImageUtil* self, Image* im, Image* kernel)
 {
   Image* retval = self->newEmptyImage(self,im->shape[0],im->shape[1]);
+
+  if (im->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(im->pixels);
+  }
+  if (kernel->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(kernel->pixels);
+  }
+  if (retval->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(retval->pixels);
+  }
 
   Npp32f* pSrc = im->pixels->devicePtr;
   int nSrcStep = im->shape[0]*sizeof(float);
@@ -157,6 +122,15 @@ Image* convolveImageImpl(ImageUtil* self, Image* im, Image* kernel)
 Image* gradientXImageImpl(ImageUtil* self, Image* im)
 {
   Image* retval = self->newEmptyImage(self,im->shape[0],im->shape[1]);
+
+  if (im->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(im->pixels);
+  }
+  if (retval->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(retval->pixels);
+  }
 
   Npp32f* pSrc = im->pixels->devicePtr;
   int nSrcStep = im->shape[0]*sizeof(float);
@@ -184,6 +158,15 @@ Image* gradientYImageImpl(ImageUtil* self, Image* im)
 {
   Image* retval = self->newEmptyImage(self,im->shape[0],im->shape[1]);
 
+  if (im->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(im->pixels);
+  }
+  if (retval->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(retval->pixels);
+  }
+
   Npp32f* pSrc = im->pixels->devicePtr;
   int nSrcStep = im->shape[0]*sizeof(float);
   NppiSize oSrcSize = {im->shape[0],im->shape[1]};
@@ -209,6 +192,15 @@ Image* gradientYImageImpl(ImageUtil* self, Image* im)
 Image* gradientMagnitudeImageImpl(ImageUtil* self, Image* im)
 {
   Image* retval = self->newEmptyImage(self,im->shape[0],im->shape[1]);
+
+  if (im->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(im->pixels);
+  }
+  if (retval->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(retval->pixels);
+  }
 
   Npp32f* pSrc = im->pixels->devicePtr;
   int nSrcStep = im->shape[0]*sizeof(float);
@@ -236,6 +228,15 @@ Image* gradientAngleImageImpl(ImageUtil* self, Image* im)
 {
   Image* retval = self->newEmptyImage(self,im->shape[0],im->shape[1]);
 
+  if (im->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(im->pixels);
+  }
+  if (retval->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(retval->pixels);
+  }
+
   Npp32f* pSrc = im->pixels->devicePtr;
   int nSrcStep = im->shape[0]*sizeof(float);
   NppiSize oSrcSize = {im->shape[0],im->shape[1]};
@@ -262,6 +263,20 @@ ImageGradientVectorPair* gradientsImageImpl(ImageUtil* self, Image* im)
 {
   Image* magnitude = self->newEmptyImage(self,im->shape[0],im->shape[1]);
   Image* angle = self->newEmptyImage(self,im->shape[0],im->shape[1]);
+
+  if (im->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(im->pixels);
+  }
+  if (magnitude->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(magnitude->pixels);
+  }
+  if (angle->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(angle->pixels);
+  }
+
   ImageGradientVectorPair* retval = (ImageGradientVectorPair*)malloc(sizeof(ImageGradientVectorPair));
   retval->magnitude = magnitude;
   retval->angle = angle;
@@ -297,6 +312,15 @@ Image* resampleImageImpl(ImageUtil* self, Image* im, int w, int h)
 {
   Image* retval = self->newEmptyImage(self,w,h);
 
+  if (im->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(im->pixels);
+  }
+  if (retval->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(retval->pixels);
+  }
+
   Npp32f* pSrc = im->pixels->devicePtr;
   int nSrcStep = im->shape[0]*sizeof(float);
   NppiSize oSrcSize = {im->shape[0],im->shape[1]};
@@ -325,6 +349,19 @@ Image* addImageImpl(ImageUtil* self, Image* im1, Image*im2)
 {
   Image* retval = self->newEmptyImage(self,im1->shape[0],im1->shape[1]);
 
+  if (im1->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(im1->pixels);
+  }
+  if (im2->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(im2->pixels);
+  }
+  if (retval->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(retval->pixels);
+  }
+
   Npp32f* pSrc1 = im1->pixels->devicePtr;
   int nSrc1Step = im1->shape[0]*sizeof(float);
   Npp32f* pSrc2 = im2->pixels->devicePtr;
@@ -341,6 +378,19 @@ Image* addImageImpl(ImageUtil* self, Image* im1, Image*im2)
 Image* subtractImageImpl(ImageUtil* self, Image* im1, Image*im2)
 {
   Image* retval = self->newEmptyImage(self,im1->shape[0],im1->shape[1]);
+
+  if (im1->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(im1->pixels);
+  }
+  if (im2->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(im2->pixels);
+  }
+  if (retval->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(retval->pixels);
+  }
 
   Npp32f* pSrc1 = (Npp32f*)(im1->pixels->devicePtr);
   int nSrc1Step = im1->shape[0]*sizeof(float);
@@ -359,6 +409,15 @@ Image* multiplyCImageImpl(ImageUtil* self, Image* im, float val)
 {
   Image* retval = self->newEmptyImage(self,im->shape[0],im->shape[1]);
 
+  if (im->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(im->pixels);
+  }
+  if (retval->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(retval->pixels);
+  }
+
   float* pSrc1 = im->pixels->devicePtr;
   int nSrc1Step = im->shape[0]*sizeof(float);
   float nConstant = val;
@@ -374,6 +433,20 @@ Image* multiplyCImageImpl(ImageUtil* self, Image* im, float val)
 Image* multiplyImageImpl(ImageUtil* self, Image* im1, Image* im2)
 {
   Image* retval = self->newEmptyImage(self,im1->shape[0],im1->shape[1]);
+
+  if (im1->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(im1->pixels);
+  }
+  if (im2->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(im2->pixels);
+  }
+  if (retval->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(retval->pixels);
+  }
+
 
   float* pSrc1 = im1->pixels->devicePtr;
   int nSrc1Step = im1->shape[0]*sizeof(float);
@@ -395,12 +468,20 @@ Image* multiplyImageImpl(ImageUtil* self, Image* im1, Image* im2)
 //##########
 //STATISTICS
 //##########
-Image* maxImageImpl(ImageUtil* self, Image* im, int radselfs)
+Image* maxImageImpl(ImageUtil* self, Image* im, int radius)
 {
   Image* retval = self->newEmptyImage(self,im->shape[0],im->shape[1]);
+  if (im->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(im->pixels);
+  }
+  if (retval->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(retval->pixels);
+  }
 
-  int wregions = im->shape[0]/radselfs;
-  int hregions = im->shape[1]/radselfs;
+  int wregions = im->shape[0]/radius;
+  int hregions = im->shape[1]/radius;
   float* pSrc = im->pixels->devicePtr;
   float* pDst = retval->pixels->devicePtr;
   NppiSize oSize = {im->shape[0],im->shape[1]};
@@ -410,16 +491,24 @@ Image* maxImageImpl(ImageUtil* self, Image* im, int radselfs)
   dim3 bdim(bdimX,bdimY);
   dim3 gdim(wregions/bdimX + 1,hregions/bdimY + 1);
   //printf("w: %i, h: %i, bdimX: %i, bdimY: %i, gdimX: %i, gdimY: %i",wregions,hregions,bdimX,bdimY,gdim.x,gdim.y);
-  LocalMaxKernel<<<gdim,bdim>>>(pSrc,pDst,oSize,radselfs);
+  LocalMaxKernel<<<gdim,bdim>>>(pSrc,pDst,oSize,radius);
 
   return retval;
 }
 
-ImageIndexPair* maxIdxImageImpl(ImageUtil* self, Image* im, int radselfs)
+ImageIndexPair* maxIdxImageImpl(ImageUtil* self, Image* im, int radius)
 {
   Image* dst = self->newEmptyImage(self,im->shape[0],im->shape[1]);
-  int wregions = im->shape[0]/radselfs;
-  int hregions = im->shape[1]/radselfs;
+  if (im->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(im->pixels);
+  }
+  if (dst->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(dst->pixels);
+  }
+  int wregions = im->shape[0]/radius;
+  int hregions = im->shape[1]/radius;
   Npp32f* pSrc = im->pixels->devicePtr;
   Npp32f* pDst = dst->pixels->devicePtr;
   int* pIdx;
@@ -431,13 +520,15 @@ ImageIndexPair* maxIdxImageImpl(ImageUtil* self, Image* im, int radselfs)
   int bdimY = fmin(32,hregions);
   dim3 bdim(bdimX,bdimY);
   dim3 gdim(wregions/bdimX + 1,hregions/bdimY + 1);
-  LocalMaxIdxKernel<<<gdim,bdim>>>(pSrc,pDst,pIdx,oSize,radselfs);
+  LocalMaxIdxKernel<<<gdim,bdim>>>(pSrc,pDst,pIdx,oSize,radius);
   int* h_pIdx = (int*)malloc(indexSize);
   cudaMemcpy(h_pIdx,pIdx,indexSize,cudaMemcpyDeviceToHost);
   ImageIndexPair* retval = (ImageIndexPair*)malloc(sizeof(ImageIndexPair));
-  retval->image=dst;
+  retval->image=im;
   retval->index=h_pIdx;
   retval->count=wregions*hregions;
+  retval->subPixelX = NULL;
+  retval->subPixelY = NULL;
   cudaFree(pIdx);
   return retval;
 }
@@ -445,6 +536,16 @@ ImageIndexPair* maxIdxImageImpl(ImageUtil* self, Image* im, int radselfs)
 ImageIndexPair* thresholdIdxImageImpl(ImageUtil* self, Image* im, float threshold)
 {
   Image* dst = self->newEmptyImage(self,im->shape[0],im->shape[1]);
+
+  if (im->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(im->pixels);
+  }
+  if (dst->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(dst->pixels);
+  }
+
   Npp32f* pSrc = im->pixels->devicePtr;
   Npp32f* pDst = dst->pixels->devicePtr;
   int* pIdx;
@@ -495,12 +596,21 @@ ImageIndexPair* thresholdIdxImageImpl(ImageUtil* self, Image* im, float threshol
   return retval;
 }
 
-Image* localContrastImageImpl(ImageUtil* self, Image* im, int radselfs)
+Image* localContrastImageImpl(ImageUtil* self, Image* im, int radius)
 {
   Image* retval = self->newEmptyImage(self,im->shape[0],im->shape[1]);
 
-  int wregions = im->shape[0]/radselfs;
-  int hregions = im->shape[1]/radselfs;
+  if (im->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(im->pixels);
+  }
+  if (retval->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(retval->pixels);
+  }
+
+  int wregions = im->shape[0]/radius;
+  int hregions = im->shape[1]/radius;
   float* pSrc = im->pixels->devicePtr;
   float* pDst = retval->pixels->devicePtr;
   NppiSize oSize = {im->shape[0],im->shape[1]};
@@ -510,7 +620,7 @@ Image* localContrastImageImpl(ImageUtil* self, Image* im, int radselfs)
   dim3 bdim(bdimX,bdimY);
   dim3 gdim(wregions/bdimX + 1,hregions/bdimY + 1);
   //printf("w: %i, h: %i, bdimX: %i, bdimY: %i, gdimX: %i, gdimY: %i",wregions,hregions,bdimX,bdimY,gdim.x,gdim.y);
-  LocalContrastKernel<<<gdim,bdim>>>(pSrc,pDst,oSize,radselfs);
+  LocalContrastKernel<<<gdim,bdim>>>(pSrc,pDst,oSize,radius);
 
   return retval;
 }
@@ -524,6 +634,11 @@ Image* localContrastImageImpl(ImageUtil* self, Image* im, int radselfs)
 
 void subPixelAlignImageIndexPairImpl(ImageUtil* self, ImageIndexPair* data)
 {
+  printf("\nSUBPIXEL\n");
+  if (data->image->pixels->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(data->image->pixels);
+  }
   Image* Ix = self->gradientX(self,data->image);
   Image* Iy = self->gradientY(self,data->image);
 
@@ -531,26 +646,31 @@ void subPixelAlignImageIndexPairImpl(ImageUtil* self, ImageIndexPair* data)
   float* pSubPixelY;
   NppiSize oSize = {Ix->shape[0],Ix->shape[1]};
 
-  size_t size = sizeof(float)*data->count;
+  int* d_pIdx;
+  cudaMalloc(&d_pIdx,sizeof(int)*data->count);
+  cudaMemcpy(d_pIdx,data->index,sizeof(int)*data->count,cudaMemcpyHostToDevice);
+
+  int size = sizeof(float)*data->count;
   cudaMalloc(&pSubPixelX,size);
   cudaMalloc(&pSubPixelY,size);
 
   int bdimX = min(1024,data->count);
   dim3 bdim(bdimX);
-  dim3 gdim(data->count/bdimX + 1);
-  SubPixelAlignKernel<<<gdim,bdim>>>(Ix->pixels->devicePtr,Iy->pixels->devicePtr,data->index,pSubPixelX,pSubPixelY,oSize,data->count);
+  dim3 gdim((data->count/bdimX) + 1);
+  SubPixelAlignKernel<<<gdim,bdim>>>(data->image->pixels->devicePtr,Ix->pixels->devicePtr,Iy->pixels->devicePtr,d_pIdx,pSubPixelX,pSubPixelY,oSize,data->count);
+  printf("kernel launched; %i\n",bdimX);
+  data->subPixelX = (float*)malloc(size);
+  data->subPixelY = (float*)malloc(size);
 
-  float* h_subPixelX = (float*)malloc(size);
-  float* h_subPixelY = (float*)malloc(size);
-
-  cudaMemcpy(h_subPixelX,pSubPixelX,size,cudaMemcpyDeviceToHost);
-  cudaMemcpy(h_subPixelY,pSubPixelY,size,cudaMemcpyDeviceToHost);
+  cudaMemcpy(data->subPixelX,pSubPixelX,size,cudaMemcpyDeviceToHost);
+  cudaMemcpy(data->subPixelY,pSubPixelY,size,cudaMemcpyDeviceToHost);
   cudaFree(pSubPixelX);
   cudaFree(pSubPixelY);
+  cudaFree(d_pIdx);
+  printf("CUDA FREED\n");
   Ix->free(Ix);
   Iy->free(Iy);
-  data->subPixelX = h_subPixelX;
-  data->subPixelY = h_subPixelY;
+  printf("IM FREED\n");
 }
 
 
@@ -562,7 +682,7 @@ Matrix** makeFeatureDescriptorsForImageIndexPairImpl(ImageUtil* self, ImageIndex
 
   int bdimX = min(1024,keypoints->count);
   dim3 bdim(bdimX);
-  dim3 gdim(keypoints->count/bdimX + 1);
+  dim3 gdim((keypoints->count/bdimX) + 1);
   MakeFeatureDescriptorKernel<<<gdim, bdim>>>(im->pixels->devicePtr,oSize,keypoints->subPixelX,keypoints->subPixelY,keypoints->count,d_features,featureWidth);
   Matrix** retval = (Matrix**)malloc(sizeof(Matrix*)*keypoints->count);
   for (int i = 0; i < keypoints->count; i++)
@@ -579,11 +699,11 @@ Matrix* generalizeFeatureMatrixImpl(ImageUtil* self, Matrix* features, int nBins
 {
   if (features->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self->matutil,features);
+    copyHostToDeviceCudaMatrix(features);
   }
   int nFeatureWidth = (int)sqrt(features->shape[1]);
   Matrix* genFeatures = self->matutil->newEmptyMatrix(features->shape[0],nBins*nFeatureWidth);
-  copyHostToDeviceCudaMatrix(self->matutil,genFeatures);
+  copyHostToDeviceCudaMatrix(genFeatures);
   int bdimX = 16;
   int bdimY = fmin(64,features->shape[0]);
   dim3 bdim(bdimX,bdimY);
@@ -596,7 +716,7 @@ void unorientFeatureMatrixImpl(ImageUtil* self, Matrix* features, int nBins)
 {
   if (features->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self->matutil,features);
+    copyHostToDeviceCudaMatrix(features);
   }
   int bdimX = fmin(1024,features->shape[0]);
   dim3 bdim(bdimX);
@@ -639,3 +759,7 @@ DLLEXPORT ImageUtil* GetImageUtil(MatrixUtil* matutil)
 
   return self;
 }
+
+#ifdef __cplusplus
+  }
+#endif

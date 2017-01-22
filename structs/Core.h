@@ -1,10 +1,21 @@
+#ifdef EXPORTING
+#ifdef __cplusplus
+  #define DLLEXPORT extern "C" __declspec (dllexport)
+#else
+  #define DLLEXPORT __declspec (dllexport)
+#endif
+#else
+#ifdef __cplusplus
+  #define DLLEXPORT extern "C" __declspec (dllimport)
+#else
+  #define DLLEXPORT __declspec (dllimport)
+  #endif
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include "Array.h"
-
-#define DLLEXPORT extern "C" __declspec (dllexport)
-#define CDECL __cdecl
 
 // (i,j) == (row,col)
 int IDX2C(int i, int j, int td)

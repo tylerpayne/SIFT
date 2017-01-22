@@ -1,17 +1,27 @@
-COMPILER=g++
+COMPILER=gcc
 OUTPUT=cv
 INPUT=refactortest.c
-#GTKCFLAGS = -I/usr/include/gtk-3.0 -I/usr/include/at-spi2-atk/2.0 -I/usr/include/at-spi-2.0 -I/usr/include/dbus-1.0 -I/usr/lib/dbus-1.0/include -I/usr/include/gtk-3.0 -I/usr/include/gio-unix-2.0/ -I/usr/include/cairo -I/usr/include/pango-1.0 -I/usr/include/harfbuzz -I/usr/include/pango-1.0 -I/usr/include/atk-1.0 -I/usr/include/cairo -I/usr/include/pixman-1 -I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/gdk-pixbuf-2.0 -I/usr/include/libpng16 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include
-#GTKLIBS = -lgtk-3 -lgdk-3 -lpangocairo-1.0 -lpango-1.0 -latk-1.0 -lcairo-gobject -lcairo -lgdk_pixbuf-2.0 -lgio-2.0 -lgobject-2.0 -lglib-2.0 -lintl
 CUDALIBS = -lnppc -lnppi -lcublas -lcublas -lcusolver -lcudart
-GTKCFLAGS = -I/usr/include/gtk-3.0 -I/usr/include/at-spi2-atk/2.0 -I/usr/include/at-spi-2.0 -I/usr/include/dbus-1.0 -I/usr/lib/dbus-1.0/include -I/usr/include/gtk-3.0 -I/usr/include/gio-unix-2.0/ -I/usr/include/cairo -I/usr/include/pango-1.0 -I/usr/include/harfbuzz -I/usr/include/pango-1.0 -I/usr/include/atk-1.0 -I/usr/include/cairo -I/usr/include/pixman-1 -I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/gdk-pixbuf-2.0 -I/usr/include/libpng16 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include
-GTKLIBS = -lgdk_pixbuf-2.0 -lgio-2.0 -lgobject-2.0 -lglib-2.0 -lintl
+GTKCFLAGS = -IC:/gtk/include/gtk-2.0 -IC:/gtk/lib/gtk-2.0/include -IC:/gtk/include/pango-1.0 -IC:/gtk/include/gio-unix-2.0/ -IC:/gtk/include/cairo -IC:/gtk/include/atk-1.0 -IC:/gtk/include/cairo -IC:/gtk/include/pixman-1 -IC:/gtk/include/gdk-pixbuf-2.0 -IC:/gtk/include/libpng16 -IC:/gtk/include/pango-1.0 -IC:/gtk/include/harfbuzz -IC:/gtk/include/pango-1.0 -IC:/gtk/include/glib-2.0 -IC:/gtk/lib/glib-2.0/include -IC:/gtk/include/freetype2 -IC:/gtk/include/libpng16 -IC:/gtk/include/freetype2 -IC:/gtk/include/libpng16
+GTKLIBS = -lgtk-win32-2.0 -lgdk-win32-2.0 -lpangocairo-1.0 -lgio-2.0 -latk-1.0 -lcairo -lgdk_pixbuf-2.0 -lgio-2.0 -lpangoft2-1.0 -lpango-1.0 -lgobject-2.0 -lglib-2.0 -lintl -lfontconfig -lfreetype
+GTKPATH = C:/gtk
 
-CV_NATIVEDIRS = utils/CUDAMatrixUtil.cu utils/CUDAImageUtil.cu
+CV_MATRIXUTIL = utils/CUDAMatrixUtil.cu
+CV_IMAGEUTIL = utils/CUDAImageUtil.cu
 
-build:
-	$(foreach dir,$(CV_NATIVEDIRS),nvcc -o $(subst .cu,,$(dir)) --shared $(dir) $(CUDALIBS);)
-	$(COMPILER) -I./utils -o $(OUTPUT) $(INPUT) -L./utils $(foreach dir,$(CV_NATIVEDIRS),-l$(subst utils/,,$(subst .cu,,$(dir))))
+CUPATH = C:/Program\ Files/NVIDIA\ GPU\ Computing\ Toolkit/CUDA/v8.0
+
+build-all:
+	nvcc -shared --compiler-options="-D EXPORTING" -I./ -I./bin -o CUDAMatrixUtil $(CV_MATRIXUTIL) $(CUDALIBS)
+	nvcc -shared --compiler-options="-D EXPORTING" -I./ -I./bin -o CUDAImageUtil $(CV_IMAGEUTIL) -L./bin -lCUDAMatrixUtil $(CUDALIBS)
+	nvcc -I./ -I./bin $(GTKCFLAGS) -o $(OUTPUT) $(INPUT) -L./ -L$(GTKPATH)/lib -lCUDAMatrixUtil -lCUDAImageUtil $(GTKLIBS)
+
+build-utils:
+	nvcc -shared --compiler-options="-D EXPORTING" -I./ -I./bin -o CUDAMatrixUtil $(CV_MATRIXUTIL) $(CUDALIBS)
+	nvcc -shared --compiler-options="-D EXPORTING" -I./ -I./bin -o CUDAImageUtil $(CV_IMAGEUTIL) -L./bin -lCUDAMatrixUtil $(CUDALIBS)
+
+build-app:
+	nvcc -I./ -I./bin $(GTKCFLAGS) -o $(OUTPUT) $(INPUT) -L./ -L$(GTKPATH)/lib -lCUDAMatrixUtil -lCUDAImageUtil $(GTKLIBS)
 
 clean:
 	rm -rf *.obj
@@ -19,9 +29,9 @@ clean:
 	rm -rf *.exe
 	rm -rf *.lib
 	rm -rf *.exp
-	rm -rf utils/*.a
-	rm -rf utils/*.exe
-	rm -rf utils/*.lib
-	rm -rf utils/*.exp
-	rm -rf utils/*.obj
-	rm -rf utils/*.dll
+	rm -rf bin/*.a
+	rm -rf bin/*.exe
+	rm -rf bin/*.lib
+	rm -rf bin/*.exp
+	rm -rf bin/*.obj
+	rm -rf bin/*.dll

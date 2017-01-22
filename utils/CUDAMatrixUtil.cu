@@ -4,6 +4,10 @@
 #include "cusolverDn.h"
 #include "kernels/MathKernels.cu"
 
+#ifdef __cplusplus
+  extern "C" {
+#endif
+
 cudaStream_t _stream;
 cublasHandle_t _cublasHandle;
 cusolverDnHandle_t _cusolverHandle;
@@ -37,13 +41,13 @@ void freeCudaMatrixImpl(Matrix* m)
   free(m);
 }
 
-void copyDeviceToDeviceCudaMatrix(MatrixUtil* self, Matrix* A, Matrix* B)
+DLLEXPORT void copyDeviceToDeviceCudaMatrix(Matrix* A, Matrix* B)
 {
     size_t size = sizeof(float)*A->shape[0]*A->shape[1];
     cudaMemcpy(B->devicePtr,A->devicePtr,size,cudaMemcpyDeviceToDevice);
 }
 
-void copyHostToDeviceCudaMatrix(MatrixUtil* self, Matrix* mat)
+DLLEXPORT void copyHostToDeviceCudaMatrix(Matrix* mat)
 {
     size_t size = sizeof(float)*mat->shape[0]*mat->shape[1];
     if (VERBOSITY > 3)
@@ -56,7 +60,7 @@ void copyHostToDeviceCudaMatrix(MatrixUtil* self, Matrix* mat)
     mat->isHostSide = 0;
 }
 
-void copyDeviceToHostCudaMatrix(MatrixUtil* self, Matrix* mat)
+DLLEXPORT void copyDeviceToHostCudaMatrix(Matrix* mat)
 {
   size_t size = sizeof(float)*mat->shape[0]*mat->shape[1];
   if (VERBOSITY > 3)
@@ -76,8 +80,7 @@ float getCudaMatrixElementImpl(Matrix* self, int i, int  j)
     printf("\n### GPU WARNING ###\n");
     printf("Matrix was on device when trying to get.");
     printf("\n###################\n");
-    cudaMemcpy(self->hostPtr,self->devicePtr,sizeof(float)*self->shape[0]*self->shape[1],cudaMemcpyDeviceToHost);
-    self->isHostSide = 1;
+    copyDeviceToHostCudaMatrix(self);
   }
   return self->hostPtr[IDX2C(i,j,self->shape[1])];
 }
@@ -103,8 +106,7 @@ void setCudaMatrixElementImpl(Matrix* self, int i, int  j, float x)
     printf("\n### GPU WARNING ###\n");
     printf("Matrix was on device when trying to set!\n");
     printf("\n###################\n");
-    cudaMemcpy(self->hostPtr,self->devicePtr,sizeof(float)*self->shape[0]*self->shape[1],cudaMemcpyDeviceToHost);
-    self->isHostSide = 1;
+    copyDeviceToHostCudaMatrix(self);
   }
   self->hostPtr[IDX2C(i,j,self->shape[1])] = x;
 }
@@ -160,17 +162,17 @@ void addCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B, Matrix* C)
 {
   if (A->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,A);
+    copyHostToDeviceCudaMatrix(A);
   }
   if (B->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,B);
+    copyHostToDeviceCudaMatrix(B);
   }
   if (C->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,C);
+    copyHostToDeviceCudaMatrix(C);
   }
-  copyDeviceToDeviceCudaMatrix(self,B,C);
+  copyDeviceToDeviceCudaMatrix(B,C);
   //cublasSetStream(_cublasHandle,self->stream);
   float a = 1;
   cublasErrCheck(cublasSaxpy(_cublasHandle,A->shape[0]*A->shape[1],&a,A->devicePtr,1,C->devicePtr,1));
@@ -181,17 +183,17 @@ void subtractCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B, Matrix* C)
 {
   if (A->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,A);
+    copyHostToDeviceCudaMatrix(A);
   }
   if (B->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,B);
+    copyHostToDeviceCudaMatrix(B);
   }
   if (C->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,C);
+    copyHostToDeviceCudaMatrix(C);
   }
-  copyDeviceToDeviceCudaMatrix(self,A,C);
+  copyDeviceToDeviceCudaMatrix(A,C);
   //cublasSetStream(_cublasHandle,self->stream);
   float a = -1;
   cublasErrCheck(cublasSaxpy(_cublasHandle,A->shape[0]*A->shape[1],&a,B->devicePtr,1,C->devicePtr,1));
@@ -202,7 +204,7 @@ int* minRowsCudaMatrixImpl(MatrixUtil* self, Matrix* A)
 {
   if (A->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,A);
+    copyHostToDeviceCudaMatrix(A);
   }
 
   int *idx = (int*)malloc(sizeof(int)*A->shape[0]);
@@ -215,15 +217,36 @@ int* minRowsCudaMatrixImpl(MatrixUtil* self, Matrix* A)
   return idx;
 }
 
+float maxValCudaMatrixImpl(MatrixUtil* self, Matrix* A)
+{
+  int c = self->maxIdx(self,A);
+  int* idx = C2IDX(c,A->shape[1]);
+  return A->getElement(A,idx[0],idx[1]);
+}
+
+int maxIdxCudaMatrixImpl(MatrixUtil* self, Matrix* A)
+{
+  if (A->isHostSide)
+  {
+    copyHostToDeviceCudaMatrix(A);
+  }
+
+  int idx = 0;
+  cublasErrCheck(cublasIsamax(_cublasHandle, A->shape[0]*A->shape[1],
+                            A->devicePtr, 1, &idx));
+  idx -= 1;
+  return idx;
+}
+
 void powCudaMatrixImpl(MatrixUtil* self, Matrix* A, float k, Matrix* C)
 {
   if (A->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,A);
+    copyHostToDeviceCudaMatrix(A);
   }
   if (C->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,C);
+    copyHostToDeviceCudaMatrix(C);
   }
   int bdimX = fmin(1024,A->shape[1]*A->shape[0]);
   dim3 bdim(bdimX);
@@ -235,11 +258,11 @@ void transposeCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* C)
 {
   if (A->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,A);
+    copyHostToDeviceCudaMatrix(A);
   }
   if (C->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,C);
+    copyHostToDeviceCudaMatrix(C);
   }
   int bdimX = fmin(32,A->shape[1]);
   int bdimY = fmin(32,A->shape[0]);
@@ -252,11 +275,11 @@ float distanceCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B)
 {
   if (A->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,A);
+    copyHostToDeviceCudaMatrix(A);
   }
   if (B->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,B);
+    copyHostToDeviceCudaMatrix(B);
   }
 
   Matrix* C = self->newEmptyMatrix(A->shape[0],B->shape[1]);
@@ -273,11 +296,11 @@ void multiplyConstCudaMatrixImpl(MatrixUtil* self, Matrix* A, float b, Matrix* C
 {
   if (A->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,A);
+    copyHostToDeviceCudaMatrix(A);
   }
   if (C->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,C);
+    copyHostToDeviceCudaMatrix(C);
   }
   //cublasSetStream(_cublasHandle,self->stream);
   cublasErrCheck(cublasSaxpy(_cublasHandle,A->shape[0]*A->shape[1],&b,A->devicePtr,1,C->devicePtr,1));
@@ -288,15 +311,15 @@ void dotCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B, Matrix* C)
 {
   if (A->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,A);
+    copyHostToDeviceCudaMatrix(A);
   }
   if (B->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,B);
+    copyHostToDeviceCudaMatrix(B);
   }
   if (C->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,C);
+    copyHostToDeviceCudaMatrix(C);
   }
   //cublasSetStream(_cublasHandle,self->stream);
   float alpha = 1;
@@ -337,15 +360,15 @@ void featureDistanceCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B, Matri
 {
   if (A->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,A);
+    copyHostToDeviceCudaMatrix(A);
   }
   if (B->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,B);
+    copyHostToDeviceCudaMatrix(B);
   }
   if (C->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,C);
+    copyHostToDeviceCudaMatrix(C);
   }
   int bdimX = fmin(32,B->shape[0]);
   int bdimY = fmin(32,A->shape[0]);
@@ -358,11 +381,11 @@ void makeCrossMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* Ax)
 {
   if (A->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,A);
+    copyHostToDeviceCudaMatrix(A);
   }
   if (Ax->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,Ax);
+    copyHostToDeviceCudaMatrix(Ax);
   }
   Cross3X3MatrixKernel<<<1,1>>>(A->devicePtr,Ax->devicePtr);
 }
@@ -372,15 +395,15 @@ void cross3X3MatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B, Matrix* C)
 {
   if (A->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,A);
+    copyHostToDeviceCudaMatrix(A);
   }
   if (B->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,B);
+    copyHostToDeviceCudaMatrix(B);
   }
   if (C->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,C);
+    copyHostToDeviceCudaMatrix(C);
   }
   Matrix* Bx = self->newEmptyMatrix(3,3);
   self->makeCrossMatrix(self,B,Bx);
@@ -395,11 +418,11 @@ void invCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* Ainv)
 {
   if (A->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,A);
+    copyHostToDeviceCudaMatrix(A);
   }
   if (Ainv->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,Ainv);
+    copyHostToDeviceCudaMatrix(Ainv);
   }
 
   float* Acopy;
@@ -485,11 +508,11 @@ void copyCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B, Rect size, Point
 {
   if (A->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,A);
+    copyHostToDeviceCudaMatrix(A);
   }
   if (B->isHostSide)
   {
-    copyHostToDeviceCudaMatrix(self,B);
+    copyHostToDeviceCudaMatrix(B);
   }
   int bdimX = fmin(32,size.width);
   int bdimY = fmin(32,size.height);
@@ -527,7 +550,7 @@ void pprintCudaMatrixImpl(MatrixUtil* self, Matrix* A, char* label)
   printf("\n%s:\n\n",label);
   if (!A->isHostSide)
   {
-    copyDeviceToHostCudaMatrix(self,A);
+    copyDeviceToHostCudaMatrix(A);
   }
   for (int i = 0; i < A->shape[0]; i++)
   {
@@ -560,6 +583,8 @@ void pprintCudaMatrixImpl(MatrixUtil* self, Matrix* A, char* label)
   cudaMatrixUtil->makeCrossMatrix = makeCrossMatrixImpl;
   cudaMatrixUtil->cross = cross3X3MatrixImpl;
   cudaMatrixUtil->inv = invCudaMatrixImpl;
+  cudaMatrixUtil->maxIdx = maxIdxCudaMatrixImpl;
+  cudaMatrixUtil->maxVal = maxValCudaMatrixImpl;
   cudaMatrixUtil->minRows = minRowsCudaMatrixImpl;
   cudaMatrixUtil->pow = powCudaMatrixImpl;
   cudaMatrixUtil->featureDistance = featureDistanceCudaMatrixImpl;
@@ -588,3 +613,6 @@ void pprintCudaMatrixImpl(MatrixUtil* self, Matrix* A, char* label)
 
   return cudaMatrixUtil;
 }
+#ifdef __cplusplus
+  }
+#endif

@@ -1,10 +1,15 @@
 typedef struct Image Image;
-typedef void (*freeImageFunc)(Image*);
+
+  typedef void (*syncImageFunc)(Image*);
+  typedef void (*freeImageFunc)(Image*);
+
 struct Image
 {
-  int nChannels;
   Matrix* pixels;
+  int nChannels;
   int* shape;
-  freeImageFunc free;
   void* pixbuf;
+  syncImageFunc syncDeviceFromHost;
+  syncImageFunc syncHostFromDevice;
+  freeImageFunc free;
 };

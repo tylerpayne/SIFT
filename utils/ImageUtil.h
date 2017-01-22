@@ -24,8 +24,6 @@ typedef struct ImageUtil ImageUtil;
 typedef Image* (*newImageFromHostFloatFunc)(ImageUtil*,float*,int,int);
 typedef Image* (*newImageFromMatrixFunc)(ImageUtil*, Matrix*);
 typedef Image* (*newEmptyImageFunc)(ImageUtil*, int, int );
-typedef Image* (*loadImageFromFileFunc)(ImageUtil*, char*);
-typedef void (*saveImageToFileFunc)(ImageUtil*,Image*, char*);
 typedef Image* (*downsampleImageFunc)(ImageUtil*,Image*,int,int);
 typedef Image* (*imimFunc)(ImageUtil*,Image*,Image*);
 typedef Image* (*imintFunc)(ImageUtil*,Image*,int);

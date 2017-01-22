@@ -4,7 +4,9 @@ typedef struct MatrixUtil MatrixUtil;
 
 typedef void (*m1m2rFunc)(MatrixUtil* , Matrix *, Matrix *, Matrix *);
 typedef int (*m1m2Func)(MatrixUtil* , Matrix *, Matrix *);
-typedef int* (*rintm1Func)(MatrixUtil* , Matrix *);
+typedef int* (*rpintm1Func)(MatrixUtil* , Matrix *);
+typedef float(*rfloatm1Func)(MatrixUtil*,Matrix*);
+typedef int (*rintm1Func)(MatrixUtil*,Matrix*);
 typedef float (*fm1m2Func)(MatrixUtil* , Matrix *, Matrix *);
 typedef void (*m1Func)(MatrixUtil* , Matrix *, Matrix*);
 typedef Matrix* (*mTFunc)(MatrixUtil* , Matrix *);
@@ -29,7 +31,9 @@ struct MatrixUtil
   m1fFunc multiplyConst;
   m1m2rFunc divide;
   m1fFunc divideConst;
-  rintm1Func minRows;
+  rintm1Func maxIdx;
+  rfloatm1Func maxVal;
+  rpintm1Func minRows;
   m1Func sqrt;
   m1Func transpose;
   fm1m2Func distance;
@@ -54,3 +58,7 @@ struct MatrixUtil
 };
 
 DLLEXPORT MatrixUtil* GetMatrixUtil();
+
+DLLEXPORT void copyDeviceToDeviceCudaMatrix(Matrix* A, Matrix* B);
+DLLEXPORT void copyHostToDeviceCudaMatrix(Matrix* mat);
+DLLEXPORT void copyDeviceToHostCudaMatrix(Matrix* mat);

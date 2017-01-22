@@ -32,14 +32,14 @@ The CUDA implementation of the ImageUtil.
 
 ##### NPP
  CUDAImageUtil uses the [Nvidia Performance Primitives] library to perform common arithmetic, geometric and statistical operations on Images that are not already supported by the underlying MatrixUtil.
+
+## [IOUtil]
+The I/O Utility handles file management e.g. loading images.
  
- ## [IOUtil]
- The I/O Utility handles file management e.g. loading images.
+Currently suppported image formats: JPEG,PNG,BMP,ICO
  
- Currently suppported image formats: JPEG,PNG,BMP,ICO
- 
- ## [DrawUtil]
- The Draw Utility uses [GTK+] v2 to display images and draw elements like keypoints on top of them.
+## [DrawUtil]
+The Draw Utility uses [GTK+] v2 to display images and draw elements like keypoints on top of them.
 
 # Data Structures
 
@@ -64,7 +64,7 @@ The CUDA implementation of the ImageUtil.
   ImageUtil* imutil = GetImageUtil(matutil); // Get CUDA Image Util
   IOUtil* ioutil = GetIOUtil(imutil);
   //Init the CV objects
-  Filters *filters = GetFilters(imutil);
+  Filters *filters = NewFilters(imutil);
   //Load the image
   Image* in = ioutil->loadImageFromFile(ioutil,path);
   Image* im = imutil->resample(imutil,in,256,256);
@@ -95,5 +95,10 @@ The CUDA implementation of the ImageUtil.
 [CUDAImageUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/CUDAImageUtil.h
 [IOUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/IOUtil.h
 [DrawUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/DrawUtil.h
+[Filters]:https://github.com/tylerpayne/computervision/blob/master/cv/Filters.h
+[Extractor]:https://github.com/tylerpayne/computervision/blob/master/cv/Extractor.h
+[Matcher]:https://github.com/tylerpayne/computervision/blob/master/cv/Matcher.h
+
+[GTK+]:http://www.gtk.org
 [lena]:https://github.com/tylerpayne/computervision/blob/master/lena256.png
 [corners]:https://github.com/tylerpayne/computervision/blob/master/lenacorners.png

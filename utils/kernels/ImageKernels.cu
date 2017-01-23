@@ -234,17 +234,20 @@ __device__ float GetBiCubicKernelWeight(float x)
 
 __device__ float ReadSubPixelKernel(float* pSrc, NppiSize oSize, float x, float y)
 {
-  int Xidx = (int)floorf(x);
-  int Yidx = (int)floorf(y);
+  int Xidx = (int)roundf(x);
+  int Yidx = (int)roundf(y);
   float accum = 0;
   for (int v = -2; v <= 2; v++)
   {
     for (int u = -2; u <= 2; u++)
     {
-      float thisV = y - v;
-      float thisU = x - u;
-      float k = GetBiCubicKernelWeight(sqrtf((thisV*thisV)+(thisU*thisU)));
-      accum += pSrc[IDX2CKernel(Yidx+v,Xidx+u,oSize.width)]*k;
+      float thisV = (y-Yidx) + v;
+      float thisU = (x-Xidx) + u;
+      if (Yidx+v >= 0 && Xidx+u >= 0 && Yidx+v < oSize.height && Xidx+u < oSize.width)
+      {
+        float k = GetBiCubicKernelWeight(sqrtf((thisV*thisV)+(thisU*thisU)));
+        accum += pSrc[IDX2CKernel(Yidx+v,Xidx+u,oSize.width)]*k;
+      }
     }
   }
   return accum;
@@ -257,13 +260,12 @@ __global__ void MakeFeatureDescriptorKernel(float* pSrc, NppiSize oSize, float* 
   {
     float u = pSubPixelX[x];
     float v = pSubPixelY[x];
-    float* feature = &pFeatures[x*nFeatureWidth*nFeatureWidth];
     int radius = nFeatureWidth/2;
     for (int i = 0; i < nFeatureWidth; i++)
     {
-      for (int j = 0; j< nFeatureWidth; j++)
+      for (int j = 0; j < nFeatureWidth; j++)
       {
-          feature[IDX2CKernel(i,j,nFeatureWidth)] = ReadSubPixelKernel(pSrc,oSize,u+(i-radius),v+(j-radius));
+          pFeatures[x*nFeatureWidth*nFeatureWidth + IDX2CKernel(i,j,nFeatureWidth)] = ReadSubPixelKernel(pSrc,oSize,(u-radius)+j,(v-radius)+i);
       }
     }
   }

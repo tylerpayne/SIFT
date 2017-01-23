@@ -15,7 +15,6 @@ Image* loadImageFromFileImpl(IOUtil* self, char* filepath)
   int w = gdk_pixbuf_get_width(pixbuf);
   int h = gdk_pixbuf_get_width(pixbuf);
   int nChannels = gdk_pixbuf_get_n_channels(pixbuf);
-  printf("nchannels: %i\n",nChannels);
   char* image = (char*)gdk_pixbuf_get_pixels(pixbuf);
   int size = sizeof(float)*w*h;
   float* data = (float*)malloc(size);

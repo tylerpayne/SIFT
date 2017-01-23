@@ -5,7 +5,7 @@ Array* findCornerKeypointsImpl(Extractor* self, Image* im, int gaussWidth, float
 {
   if (contrastTreshold == NULL)
   {
-    float zzz = 0.2;
+    float zzz = 0.01;
     contrastTreshold = &zzz;
   }
   Image* contrast = self->imutil->localContrast(self->imutil,im,localMaxWindow);
@@ -20,8 +20,8 @@ Array* findCornerKeypointsImpl(Extractor* self, Image* im, int gaussWidth, float
   ImageIndexPair* corners = self->imutil->maxIdx(self->imutil,DoGImage,localMaxWindow);
   self->imutil->subPixelAlignImageIndexPair(self->imutil,corners);
   Image* angle = self->imutil->gradientAngle(self->imutil,im);
-  Matrix** features = self->imutil->makeFeatureDescriptorsForImageIndexPair(self->imutil,corners,angle,8);
-  angle->free(angle);
+  Matrix** features = self->imutil->makeFeatureDescriptorsForImageIndexPair(self->imutil,corners,angle,16);
+  //angle->free(angle);
   Keypoint** keypoints = (Keypoint**)malloc(sizeof(Keypoint*)*corners->count);
   int TOTALCOUNT = 0;
   for (int i = 0; i < corners->count; i++)
@@ -29,7 +29,6 @@ Array* findCornerKeypointsImpl(Extractor* self, Image* im, int gaussWidth, float
     int* idx = C2IDX(corners->index[i],im->shape[0]);
     float X = corners->subPixelX[i];
     float Y = corners->subPixelY[i];
-    printf("\nindex: %i subpixel: (%f,%f)\n",corners->index[i],X,Y);
     if (idx[0] <= 0 || idx[1] <= 0)
     {
       continue;
@@ -39,7 +38,6 @@ Array* findCornerKeypointsImpl(Extractor* self, Image* im, int gaussWidth, float
       continue;
     }
     float con = contrast->pixels->getElement(contrast->pixels,idx[0],idx[1]);
-    printf("Contrast: %f",con);
     if (con < contrastTreshold[0] || con != con)
     {
       continue;
@@ -55,7 +53,6 @@ Array* findCornerKeypointsImpl(Extractor* self, Image* im, int gaussWidth, float
   corners->image->free(corners->image);
   free(corners->index);
   free(corners);
-  printf("\n Out of the loop, count=%i\n",TOTALCOUNT);
   Keypoint** retkeys = (Keypoint**)malloc(sizeof(Keypoint*)*TOTALCOUNT);
   memcpy(retkeys,keypoints,sizeof(Keypoint*)*TOTALCOUNT);
 
@@ -63,8 +60,6 @@ Array* findCornerKeypointsImpl(Extractor* self, Image* im, int gaussWidth, float
   retval->ptr = (void*)retkeys;
   retval->count = TOTALCOUNT;
   free(keypoints);
-
-
 
   return retval;
 }
@@ -83,7 +78,7 @@ Matrix* makeFeatureMatrixFromKeypointDescriptorsImpl(Extractor* self, Array* key
     Matrix* feat = (Matrix*)(kp->get(kp,"feature"));
     featureMatrix->setRegion(featureMatrix,i,0,1,featureDim,feat->getRegion(feat,0,0,feat->shape[0],feat->shape[1]));
   }
-  return featureMatrix;
+  return self->imutil->generalizeFeatureMatrix(self->imutil,featureMatrix,12);
 }
 
 Extractor* NewExtractor(ImageUtil* imutil)

@@ -12,6 +12,14 @@ cudaStream_t _stream;
 cublasHandle_t _cublasHandle;
 cusolverDnHandle_t _cusolverHandle;
 
+void cudaErrCheck(cudaError_t stat)
+{
+  if (stat != cudaSuccess)
+  {
+    printf("CUDA ERR: %i\n",stat);
+  }
+}
+
 void cublasErrCheck(cublasStatus_t stat)
 {
   if (stat != CUBLAS_STATUS_SUCCESS)
@@ -30,7 +38,7 @@ void cusolverErrCheck(cusolverStatus_t stat)
 
 void freeCudaMatrixDeviceMemory(Matrix* mat)
 {
-  cudaFree(mat->devicePtr);
+  cudaErrCheck(cudaFree(mat->devicePtr));
 }
 
 void freeCudaMatrixImpl(Matrix* m)
@@ -44,7 +52,7 @@ void freeCudaMatrixImpl(Matrix* m)
 DLLEXPORT void copyDeviceToDeviceCudaMatrix(Matrix* A, Matrix* B)
 {
     size_t size = sizeof(float)*A->shape[0]*A->shape[1];
-    cudaMemcpy(B->devicePtr,A->devicePtr,size,cudaMemcpyDeviceToDevice);
+    cudaErrCheck(cudaMemcpy(B->devicePtr,A->devicePtr,size,cudaMemcpyDeviceToDevice));
 }
 
 DLLEXPORT void copyHostToDeviceCudaMatrix(Matrix* mat)
@@ -56,7 +64,7 @@ DLLEXPORT void copyHostToDeviceCudaMatrix(Matrix* mat)
       printf("Copying from Host to Device");
       printf("\n###################\n\n");
     }
-    cudaMemcpy(mat->devicePtr,mat->hostPtr,size,cudaMemcpyHostToDevice);
+    cudaErrCheck(cudaMemcpy(mat->devicePtr,mat->hostPtr,size,cudaMemcpyHostToDevice));
     mat->isHostSide = 0;
 }
 
@@ -69,7 +77,7 @@ DLLEXPORT void copyDeviceToHostCudaMatrix(Matrix* mat)
     printf("Copying Device to Host");
     printf("\n###################\n\n");
   }
-  cudaMemcpy(mat->hostPtr,mat->devicePtr,size,cudaMemcpyDeviceToHost);
+  cudaErrCheck(cudaMemcpy(mat->hostPtr,mat->devicePtr,size,cudaMemcpyDeviceToHost));
   mat->isHostSide = 1;
 }
 
@@ -130,7 +138,7 @@ Matrix* newEmptyCudaMatrixImpl(int rows, int columns)
   float* h_data = (float*)malloc(sizeof(float)*columns*rows);
   memset(h_data,0,sizeof(float)*columns*rows);
   float* d_data;
-  cudaMalloc(&d_data,sizeof(float)*columns*rows);
+  cudaErrCheck(cudaMalloc(&d_data,sizeof(float)*columns*rows));
   int* shape = (int*)malloc(sizeof(int)*2);
   shape[0] = rows;
   shape[1] = columns;
@@ -427,8 +435,8 @@ void invCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* Ainv)
 
   float* Acopy;
   size_t size = sizeof(float)*A->shape[0]*A->shape[1];
-  cudaMalloc(&Acopy,size);
-  cudaMemcpy(Acopy,A->devicePtr,size,cudaMemcpyDeviceToDevice);
+  cudaErrCheck(cudaMalloc(&Acopy,size));
+  cudaErrCheck(cudaMemcpy(Acopy,A->devicePtr,size,cudaMemcpyDeviceToDevice));
 
   int n = A->shape[0];
   int Lwork;
@@ -443,14 +451,14 @@ void invCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* Ainv)
 
   //Create Workspace
   float* workspace;
-  cudaMalloc(&workspace,Lwork);
+  cudaErrCheck(cudaMalloc(&workspace,Lwork));
 
   //Prepare LU decomposition
   int* devIpiv;
-  cudaMalloc(&devIpiv,sizeof(int)*n);
+  cudaErrCheck(cudaMalloc(&devIpiv,sizeof(int)*n));
 
   int* devInfo;
-  cudaMalloc(&devInfo,sizeof(int));
+  cudaErrCheck(cudaMalloc(&devInfo,sizeof(int)));
 
   //DECOMPOSE
   cusolverErrCheck(cusolverDnSgetrf(_cusolverHandle,
@@ -465,15 +473,15 @@ void invCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* Ainv)
   if (VERBOSITY > 3)
   {
     int* h_info = (int*)malloc(sizeof(int));
-    cudaMemcpy(h_info,devInfo,sizeof(int),cudaMemcpyDeviceToHost);
+    cudaErrCheck(cudaMemcpy(h_info,devInfo,sizeof(int),cudaMemcpyDeviceToHost));
     printf("LU DECOMPOSITION INFO: %i\n",h_info[0]);
   }
 
   //right hand sides
   float B[] = {1,0,0,0,1,0,0,0,1};
   float *d_B;
-  cudaMalloc(&d_B,size);
-  cudaMemcpy(d_B,&B,size,cudaMemcpyHostToDevice);
+  cudaErrCheck(cudaMalloc(&d_B,size));
+  cudaErrCheck(cudaMemcpy(d_B,&B,size,cudaMemcpyHostToDevice));
 
   //solve
   cusolverErrCheck(cusolverDnSgetrs(_cusolverHandle,
@@ -490,17 +498,17 @@ void invCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* Ainv)
   if (VERBOSITY > 3)
   {
     int* h_info = (int*)malloc(sizeof(int));
-    cudaMemcpy(h_info,devInfo,sizeof(int),cudaMemcpyDeviceToHost);
+    cudaErrCheck(cudaMemcpy(h_info,devInfo,sizeof(int),cudaMemcpyDeviceToHost));
     printf("SOLVE INFO: %i\n",h_info[0]);
   }
 
-  cudaMemcpy(Ainv->devicePtr,d_B,size,cudaMemcpyDeviceToDevice);
+  cudaErrCheck(cudaMemcpy(Ainv->devicePtr,d_B,size,cudaMemcpyDeviceToDevice));
   //printf("Copied");
-  cudaFree(workspace);
-  cudaFree(devIpiv);
-  cudaFree(devInfo);
-  cudaFree(Acopy);
-  cudaFree(d_B);
+  cudaErrCheck(cudaFree(workspace));
+  cudaErrCheck(cudaFree(devIpiv));
+  cudaErrCheck(cudaFree(devInfo));
+  cudaErrCheck(cudaFree(Acopy));
+  cudaErrCheck(cudaFree(d_B));
   //printf("RETURNING!\n");
 }
 //region = i,j,rows,cols
@@ -539,9 +547,9 @@ void InitCUDAHandles(int device)
   cusolverDnCreate(&cusolverHandle);
   _cusolverHandle = cusolverHandle;
 
-  cudaStream_t stream;
-  cudaStreamCreate(&stream);
-  SetCUDAMatrixUtilStream(stream);
+  //cudaStream_t stream;
+  //cudaStreamCreate(&stream);
+  //SetCUDAMatrixUtilStream(stream);
 }
 
 void pprintCudaMatrixImpl(MatrixUtil* self, Matrix* A, char* label)

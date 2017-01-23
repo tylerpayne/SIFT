@@ -48,18 +48,21 @@ void drawKeypointsImpl(DrawUtil* self, Array* keypoints, Image* im, GtkWidget* w
       Keypoint* kp = kpList[i];
       int dest_x = (int)(kp->position[0]) - radius;
       int dest_y = (int)(kp->position[1]) - radius;
-      gdk_pixbuf_composite                (src,
-                                                         displaybuf,
-                                                         dest_x,
-                                                         dest_y,
-                                                         radius*2,
-                                                         radius*2,
-                                                         dest_x,
-                                                         dest_y,
-                                                         ((double)radius)/50.0,
-                                                         ((double)radius)/50.0,
-                                                         GDK_INTERP_HYPER,
-                                                         255);
+      if (dest_x >= 0 && dest_y >= 0 && dest_x + radius*2 < im->shape[0] && dest_y + radius*2 < im->shape[1])
+      {
+        gdk_pixbuf_composite                (src,
+                                                           displaybuf,
+                                                           dest_x,
+                                                           dest_y,
+                                                           radius*2,
+                                                           radius*2,
+                                                           dest_x,
+                                                           dest_y,
+                                                           ((double)radius)/50.0,
+                                                           ((double)radius)/50.0,
+                                                           GDK_INTERP_HYPER,
+                                                           255);
+      }
     }
     GtkWidget* imageWidget = gtk_image_new_from_pixbuf(displaybuf);
     gtk_container_add(GTK_CONTAINER(self->defaultWindow),imageWidget);

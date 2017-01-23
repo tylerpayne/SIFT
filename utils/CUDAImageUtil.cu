@@ -7,13 +7,20 @@
   extern "C" {
 #endif
 
+void cudaErrCheck(cudaError_t stat)
+{
+  if (stat != cudaSuccess)
+  {
+    printf("CUDA ERR: %i\n",stat);
+  }
+}
+
 void nppCallErrCheck(NppStatus status)
 {
   if (status != NPP_SUCCESS)
   {
     printf("\n##########\nNPP ERROR!\nError code: %d\n##########\n",status);
   }
-
 }
 
 //#############
@@ -513,7 +520,7 @@ ImageIndexPair* maxIdxImageImpl(ImageUtil* self, Image* im, int radius)
   Npp32f* pDst = dst->pixels->devicePtr;
   int* pIdx;
   size_t indexSize = sizeof(int)*(wregions*hregions);
-  cudaMalloc(&pIdx,indexSize);
+  cudaErrCheck(cudaMalloc(&pIdx,indexSize));
   NppiSize oSize = {im->shape[0],im->shape[1]};
 
   int bdimX = fmin(32,wregions);
@@ -522,14 +529,14 @@ ImageIndexPair* maxIdxImageImpl(ImageUtil* self, Image* im, int radius)
   dim3 gdim(wregions/bdimX + 1,hregions/bdimY + 1);
   LocalMaxIdxKernel<<<gdim,bdim>>>(pSrc,pDst,pIdx,oSize,radius);
   int* h_pIdx = (int*)malloc(indexSize);
-  cudaMemcpy(h_pIdx,pIdx,indexSize,cudaMemcpyDeviceToHost);
+  cudaErrCheck(cudaMemcpy(h_pIdx,pIdx,indexSize,cudaMemcpyDeviceToHost));
   ImageIndexPair* retval = (ImageIndexPair*)malloc(sizeof(ImageIndexPair));
   retval->image=im;
   retval->index=h_pIdx;
   retval->count=wregions*hregions;
   retval->subPixelX = NULL;
   retval->subPixelY = NULL;
-  cudaFree(pIdx);
+  cudaErrCheck(cudaFree(pIdx));
   return retval;
 }
 
@@ -550,7 +557,7 @@ ImageIndexPair* thresholdIdxImageImpl(ImageUtil* self, Image* im, float threshol
   Npp32f* pDst = dst->pixels->devicePtr;
   int* pIdx;
   size_t indexSize = sizeof(int)*(im->shape[0]*im->shape[1]);
-  cudaMalloc(&pIdx,indexSize);
+  cudaErrCheck(cudaMalloc(&pIdx,indexSize));
 
   int bdimX = fmin(1024,im->shape[0]*im->shape[1]);
   dim3 bdim(bdimX);
@@ -558,7 +565,7 @@ ImageIndexPair* thresholdIdxImageImpl(ImageUtil* self, Image* im, float threshol
   ThresholdIdxKernel<<<gdim,bdim>>>(pSrc,pDst,threshold,im->shape[0]*im->shape[1],pIdx);
 
   int* h_pIdx = (int*)malloc(indexSize);
-  cudaMemcpy(h_pIdx,pIdx,indexSize,cudaMemcpyDeviceToHost);
+  cudaErrCheck(cudaMemcpy(h_pIdx,pIdx,indexSize,cudaMemcpyDeviceToHost));
   int count = 0;
   for (int i = 0; i < im->shape[0]*im->shape[1]; i++)
   {
@@ -634,7 +641,6 @@ Image* localContrastImageImpl(ImageUtil* self, Image* im, int radius)
 
 void subPixelAlignImageIndexPairImpl(ImageUtil* self, ImageIndexPair* data)
 {
-  printf("\nSUBPIXEL\n");
   if (data->image->pixels->isHostSide)
   {
     copyHostToDeviceCudaMatrix(data->image->pixels);
@@ -647,51 +653,58 @@ void subPixelAlignImageIndexPairImpl(ImageUtil* self, ImageIndexPair* data)
   NppiSize oSize = {Ix->shape[0],Ix->shape[1]};
 
   int* d_pIdx;
-  cudaMalloc(&d_pIdx,sizeof(int)*data->count);
-  cudaMemcpy(d_pIdx,data->index,sizeof(int)*data->count,cudaMemcpyHostToDevice);
+  cudaErrCheck(cudaMalloc(&d_pIdx,sizeof(int)*data->count));
+  cudaErrCheck(cudaMemcpy(d_pIdx,data->index,sizeof(int)*data->count,cudaMemcpyHostToDevice));
 
   int size = sizeof(float)*data->count;
-  cudaMalloc(&pSubPixelX,size);
-  cudaMalloc(&pSubPixelY,size);
+  cudaErrCheck(cudaMalloc(&pSubPixelX,size));
+  cudaErrCheck(cudaMalloc(&pSubPixelY,size));
 
   int bdimX = min(1024,data->count);
   dim3 bdim(bdimX);
   dim3 gdim((data->count/bdimX) + 1);
   SubPixelAlignKernel<<<gdim,bdim>>>(data->image->pixels->devicePtr,Ix->pixels->devicePtr,Iy->pixels->devicePtr,d_pIdx,pSubPixelX,pSubPixelY,oSize,data->count);
-  printf("kernel launched; %i\n",bdimX);
   data->subPixelX = (float*)malloc(size);
   data->subPixelY = (float*)malloc(size);
 
-  cudaMemcpy(data->subPixelX,pSubPixelX,size,cudaMemcpyDeviceToHost);
-  cudaMemcpy(data->subPixelY,pSubPixelY,size,cudaMemcpyDeviceToHost);
-  cudaFree(pSubPixelX);
-  cudaFree(pSubPixelY);
-  cudaFree(d_pIdx);
-  printf("CUDA FREED\n");
+  cudaErrCheck(cudaMemcpy(data->subPixelX,pSubPixelX,size,cudaMemcpyDeviceToHost));
+  cudaErrCheck(cudaMemcpy(data->subPixelY,pSubPixelY,size,cudaMemcpyDeviceToHost));
+  cudaErrCheck(cudaFree(pSubPixelX));
+  cudaErrCheck(cudaFree(pSubPixelY));
+  cudaErrCheck(cudaFree(d_pIdx));
   Ix->free(Ix);
   Iy->free(Iy);
-  printf("IM FREED\n");
 }
 
 
 Matrix** makeFeatureDescriptorsForImageIndexPairImpl(ImageUtil* self, ImageIndexPair* keypoints, Image* im, int featureWidth)
 {
   float* d_features;
-  cudaMalloc(&d_features,sizeof(float)*featureWidth*keypoints->count);
+  float* d_subPixelX;
+  float* d_subPixelY;
+  cudaErrCheck(cudaMalloc(&d_features,sizeof(float)*featureWidth*featureWidth*keypoints->count));
+  cudaErrCheck(cudaMalloc(&d_subPixelY,sizeof(float)*keypoints->count));
+  cudaErrCheck(cudaMalloc(&d_subPixelX,sizeof(float)*keypoints->count));
+  cudaMemcpy(d_subPixelX,keypoints->subPixelX,sizeof(float)*keypoints->count,cudaMemcpyHostToDevice);
+  cudaMemcpy(d_subPixelY,keypoints->subPixelY,sizeof(float)*keypoints->count,cudaMemcpyHostToDevice);
+
   NppiSize oSize = {im->shape[0],im->shape[1]};
 
   int bdimX = min(1024,keypoints->count);
   dim3 bdim(bdimX);
   dim3 gdim((keypoints->count/bdimX) + 1);
-  MakeFeatureDescriptorKernel<<<gdim, bdim>>>(im->pixels->devicePtr,oSize,keypoints->subPixelX,keypoints->subPixelY,keypoints->count,d_features,featureWidth);
+  MakeFeatureDescriptorKernel<<<gdim, bdim>>>(im->pixels->devicePtr,oSize,d_subPixelX,d_subPixelY,keypoints->count,d_features,featureWidth);
   Matrix** retval = (Matrix**)malloc(sizeof(Matrix*)*keypoints->count);
   for (int i = 0; i < keypoints->count; i++)
   {
-    Matrix* m = self->matutil->newEmptyMatrix(featureWidth,featureWidth);
-    m->devicePtr = &d_features[i*featureWidth*featureWidth];
-    m->isHostSide = 0;
+    float* h_feature = (float*)malloc(sizeof(float)*featureWidth*featureWidth);
+    cudaErrCheck(cudaMemcpy(h_feature,&d_features[i*featureWidth*featureWidth],sizeof(float)*featureWidth*featureWidth,cudaMemcpyDeviceToHost));
+    Matrix* m = self->matutil->newMatrix(h_feature,featureWidth,featureWidth);
     retval[i] = m;
   }
+  cudaErrCheck(cudaFree(d_subPixelX));
+  cudaErrCheck(cudaFree(d_subPixelY));
+  cudaErrCheck(cudaFree(d_features));
   return retval;
 }
 

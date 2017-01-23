@@ -1,6 +1,6 @@
 typedef struct Matcher Matcher;
 
-typedef void (*findMatchesFunc)(Matcher*,Matrix*,Matrix*,Array*,Array*);
+typedef Image* (*findMatchesFunc)(Matcher*,Matrix*,Matrix*,Array*,Array*);
 
 struct Matcher
 {

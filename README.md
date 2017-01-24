@@ -10,33 +10,29 @@ A minor annoyance of using this design in the C language is the need to pass a `
 
 # Core Components:
 
-## Core.h
-A collection of definitions, typedefs and helpful functions that the entire library depends upon.
-
 ## [MatrixUtil]
 The abstract definition of the MatrixUtil class, allowing concrete implementations for different platforms (i.e. CUDA, Metal)
-### [PrimitiveMatrixUtil]
+#### [PrimitiveMatrixUtil]
 A plain-C implementation of the MatrixUtil.
 
-### [CUDAMatrixUtil]
+#### [CUDAMatrixUtil]
 The [CUBLAS] and [CUSOLVER] implementation of the MatrixUtil.
 
-### TODO: MetalMatrixUtil
+#### TODO: MetalMatrixUtil
 For now, see my other repo [MetalUnity].
 
 ## [ImageUtil]
 The abstract definition of the ImageUtil class, allowing concrete implementations for different platforms (i.e. CUDA, Metal). ImageUtil depends on MatrixUtil's Matrix initializers for the low level representations of images.
 
-### [CUDAImageUtil]
+#### [CUDAImageUtil]
 The CUDA implementation of the ImageUtil.
 
-##### NPP
- CUDAImageUtil uses the [Nvidia Performance Primitives] library to perform common arithmetic, geometric and statistical operations on Images that are not already supported by the underlying MatrixUtil.
+CUDAImageUtil uses the [Nvidia Performance Primitives] library to perform common arithmetic, geometric and statistical operations on  Images that are not already supported by the underlying MatrixUtil.
 
 ## [IOUtil]
 The I/O Utility handles file management e.g. loading images.
  
-Currently suppported image formats: JPEG,PNG,BMP,ICO
+Currently suppported image formats: JPEG, PNG, BMP, ICO.
  
 ## [DrawUtil]
 The Draw Utility uses [GTK+] v2 to display images and draw elements like keypoints on top of them.

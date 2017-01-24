@@ -1,4 +1,5 @@
-# computervision (UNDER DEVELOPMENT)
+# computervision 
+####(UNDER DEVELOPMENT)
 
 A collection of computer vision, data structures, and math utilities all implemented in C and accelerated with [CUDA v8.0].
 

@@ -11,17 +11,16 @@ CV_IMAGEUTIL = utils/CUDAImageUtil.cu
 
 CUPATH = C:/Program\ Files/NVIDIA\ GPU\ Computing\ Toolkit/CUDA/v8.0
 
-build-all:
-	nvcc -shared --compiler-options="-D EXPORTING" -I./ -I./bin -o CUDAMatrixUtil $(CV_MATRIXUTIL) $(CUDALIBS)
-	nvcc -shared --compiler-options="-D EXPORTING" -I./ -I./bin -o CUDAImageUtil $(CV_IMAGEUTIL) -L./bin -lCUDAMatrixUtil $(CUDALIBS)
-	nvcc -I./ -I./bin $(GTKCFLAGS) -o $(OUTPUT) $(INPUT) -L./ -L$(GTKPATH)/lib -lCUDAMatrixUtil -lCUDAImageUtil $(GTKLIBS)
+.PHONY : utils app all
 
-build-utils:
+utils:
 	nvcc -shared --compiler-options="-D EXPORTING" -I./ -I./bin -o CUDAMatrixUtil $(CV_MATRIXUTIL) $(CUDALIBS)
 	nvcc -shared --compiler-options="-D EXPORTING" -I./ -I./bin -o CUDAImageUtil $(CV_IMAGEUTIL) -L./bin -lCUDAMatrixUtil $(CUDALIBS)
 
-build-app:
+app:
 	nvcc -I./ -I./bin $(GTKCFLAGS) -o $(OUTPUT) $(INPUT) -L./ -L$(GTKPATH)/lib -lCUDAMatrixUtil -lCUDAImageUtil $(GTKLIBS)
+
+all: utils app
 
 clean:
 	rm -rf *.obj

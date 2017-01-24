@@ -1,4 +1,5 @@
 #include "IOUtil.h"
+#include <string.h>
 
 Image* loadImageFromFileImpl(IOUtil* self, char* filepath)
 {
@@ -44,10 +45,22 @@ Image* loadImageFromFileImpl(IOUtil* self, char* filepath)
 
 
 
-void saveImageToFileImpl(IOUtil* self, Image* saveim, char* filepath, int filetype)
+void saveImageToFileImpl(IOUtil* self, Image* saveim, char* filename, int filetype)
 {
   GError* err = NULL;
-  const char* path = filepath;
+
+  int fileLength = strlen(filename);
+  char* ext = IMFORMATS[filetype];
+
+  int extensionLength = strlen(ext) + 1;
+  char* extension = (char*)malloc(sizeof(char)*extensionLength);
+  char* dot = ".";
+  extension[0] = dot[0];
+  memcpy(&extension[1],ext,sizeof(char)*(extensionLength-1));
+
+  char* path = (char*)malloc(sizeof(char)*(fileLength+extensionLength));
+  memcpy(path,filename,sizeof(char)*fileLength);
+  memcpy(&path[fileLength],extension,sizeof(char)*extensionLength);
 
   unsigned char* saveData = (unsigned char*)malloc(sizeof(unsigned char)*saveim->shape[0]*saveim->shape[1]*3);
   float max = ((self->imutil)->matutil)->maxVal(self->imutil->matutil,saveim->pixels);
@@ -86,11 +99,50 @@ void saveImageToFileImpl(IOUtil* self, Image* saveim, char* filepath, int filety
   }
 }
 
+char* appendNumberToFilenameImpl(char* filename, int number)
+{
+  int length = strlen(filename);
+  char* id;
+  int offset;
+  if (number < 10)
+  {
+    id = (char*)malloc(sizeof(char));
+    id[0] = number + '0';
+    offset = 1;
+  } else if (number < 100)
+  {
+    id = (char*)malloc(sizeof(char)*2);
+    id[0] = ((number/10)%10) + '0';
+    id[1] = (number%10) + '0';
+    offset = 2;
+  } else if (number <1000)
+  {
+    id = (char*)malloc(sizeof(char)*3);
+    id[0] = ((number/100)%100) + '0';
+    id[1] = (number%100) + '0';
+    id[2] = (number%10) + '0';
+    offset =3;
+  } else if (number < 10000)
+  {
+    id = (char*)malloc(sizeof(char)*3);
+    id[0] = ((number/1000)%1000) + '0';
+    id[1] = ((number/100)%100) + '0';
+    id[2] = (number%100) + '0';
+    id[3] = (number%10) + '0';
+    offset = 4;
+  }
+  char* retval = (char*)malloc(sizeof(char)*(length+offset));
+  memcpy(&retval[0],filename,sizeof(char)*length);
+  memcpy(&retval[length],id,sizeof(char)*offset);
+  return retval;
+}
+
 IOUtil* GetIOUtil(ImageUtil* imutil)
 {
   IOUtil* self = (IOUtil*)malloc(sizeof(IOUtil));
   self->imutil = imutil;
   self->loadImageFromFile = loadImageFromFileImpl;
   self->saveImageToFile = saveImageToFileImpl;
+  self->appendNumberToFilename = appendNumberToFilenameImpl;
   return self;
 }

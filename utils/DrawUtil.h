@@ -11,7 +11,6 @@ typedef void (*drawKeypointsFunc)(DrawUtil*,Array*,Image*,GtkWidget*);
 struct DrawUtil
 {
   GdkPixbuf* keypoint;
-  GtkWidget* defaultWindow;
   newWindowFunc newWindow;
   drawImageFunc drawImage;
   drawKeypointsFunc drawKeypoints;

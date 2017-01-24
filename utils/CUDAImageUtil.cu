@@ -647,6 +647,9 @@ void subPixelAlignImageIndexPairImpl(ImageUtil* self, ImageIndexPair* data)
   }
   Image* Ix = self->gradientX(self,data->image);
   Image* Iy = self->gradientY(self,data->image);
+  Image* Ixx = self->gradientX(self,Ix);
+  Image* Ixy = self->gradientY(self,Ix);
+  Image* Iyy = self->gradientY(self,Iy);
 
   float* pSubPixelX;
   float* pSubPixelY;
@@ -663,7 +666,7 @@ void subPixelAlignImageIndexPairImpl(ImageUtil* self, ImageIndexPair* data)
   int bdimX = min(1024,data->count);
   dim3 bdim(bdimX);
   dim3 gdim((data->count/bdimX) + 1);
-  SubPixelAlignKernel<<<gdim,bdim>>>(data->image->pixels->devicePtr,Ix->pixels->devicePtr,Iy->pixels->devicePtr,d_pIdx,pSubPixelX,pSubPixelY,oSize,data->count);
+  SubPixelAlignKernel<<<gdim,bdim>>>(Ix->pixels->devicePtr,Iy->pixels->devicePtr,Ixx->pixels->devicePtr,Ixy->pixels->devicePtr,Iyy->pixels->devicePtr,d_pIdx,pSubPixelX,pSubPixelY,oSize,data->count);
   data->subPixelX = (float*)malloc(size);
   data->subPixelY = (float*)malloc(size);
 

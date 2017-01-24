@@ -36,7 +36,7 @@ __global__ void FeatureDistanceMatrixKernel(float* A, int lda, float* B, int ldb
       float diff = B[IDX2CKernel(x,i,nDim)] - A[IDX2CKernel(y,i,nDim)];
       accum += diff*diff;
     }
-    C[IDX2CKernel(y,x,ldb)] = accum/(float)nDim;
+    C[IDX2CKernel(y,x,ldb)] = sqrtf(accum);
   }
 }
 

@@ -24,14 +24,14 @@ int main(int argc, char const *argv[]) {
   IOUtil* ioutil = GetIOUtil(imutil);
   DrawUtil* drawutil = GetDrawUtil();
 
-  Image* l_image = ioutil->loadImageFromFile(ioutil,"left015.png");
-  Array* l_points = extractor->findCornerKeypoints(extractor,l_image,30,25,15,25,NULL);
+  Image* l_image = ioutil->loadImageFromFile(ioutil,"lena.png");
+  Array* l_points = extractor->findCornerKeypoints(extractor,l_image,9,9,5,15,NULL);
   Matrix* l_features = extractor->makeFeatureMatrixFromKeypointDescriptors(extractor,l_points);
   Image* l_featim = imutil->newImageFromMatrix(imutil,l_features);
-  ioutil->saveImageToFile(ioutil,l_featim,"l_featurematriximage.png",PNG);
-
+  ioutil->saveImageToFile(ioutil,l_featim,ioutil->appendNumberToFilename("test",100),PNG);
+/*
   Image* r_image = ioutil->loadImageFromFile(ioutil,"right015.png");
-  Array* r_points = extractor->findCornerKeypoints(extractor,r_image,30,25,15,25,NULL);
+  Array* r_points = extractor->findCornerKeypoints(extractor,r_image,15,5,3,9,NULL);
   Matrix* r_features = extractor->makeFeatureMatrixFromKeypointDescriptors(extractor,r_points);
   Image* r_featim = imutil->newImageFromMatrix(imutil,r_features);
   ioutil->saveImageToFile(ioutil,r_featim,"r_featurematriximage.png",PNG);
@@ -109,8 +109,9 @@ int main(int argc, char const *argv[]) {
 
   //imutil->subPixelAlignImageIndexPair(imutil,corners);
   //ioutil->saveImageToFile(ioutil,DoGImage,"gdklena.png",PNG);
-  printf("DRAWING!");
+  */
   drawutil->drawKeypoints(drawutil,l_points,l_image,NULL);
   gtk_main();
+  cudaDeviceReset();
   return 0;
 }

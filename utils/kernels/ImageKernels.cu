@@ -271,13 +271,16 @@ __global__ void MakeFeatureDescriptorKernel(float* pSrc, NppiSize oSize, float* 
   }
 }
 
-__global__ void SubPixelAlignKernel(float* pI, float* pIx, float* pIy, int* pIdx, float* pSubPixelX, float* pSubPixelY, NppiSize oSize, int nIdx)
+__global__ void SubPixelAlignKernel(float* pIx, float* pIy, float* pIxx, float* pIxy, float* pIyy, int* pIdx, float* pSubPixelX, float* pSubPixelY, NppiSize oSize, int nIdx)
 {
   int x = (blockIdx.x * blockDim.x) + threadIdx.x;
 
-  float I;
   float Ix;
   float Iy;
+  float Ixx;
+  float Iyy;
+  float Ixy;
+  float det;
 
   float dX = 0;
   float dY = 0;
@@ -286,29 +289,21 @@ __global__ void SubPixelAlignKernel(float* pI, float* pIx, float* pIy, int* pIdx
     int thisIdx = pIdx[x];
     int row = (thisIdx/oSize.width);
     int col = thisIdx - (row*oSize.width);
-      int idx = IDX2CKernel(row,col,oSize.width);
-      I = pI[idx];
-      Ix = pIx[idx];
-      Iy = pIy[idx];
+    int idx = IDX2CKernel(row,col,oSize.width);
+    Ix = pIx[idx];
+    Iy = pIy[idx];
+    Ixx = pIxx[idx];
+    Ixy = pIxy[idx];
+    Iyy = pIyy[idx];
+    det = Ixx*Iyy - Ixy*Ixy;
 
-      float frow = (float)row;
-      float fcol = (float)col;
+    float frow = (float)row;
+    float fcol = (float)col;
 
-      if (Ix != 0)
-      {
-        dX = I/Ix + fcol;
-      } else
-      {
-        dX = fcol;
-      }
-      if (Iy != 0)
-      {
-        dY = I/Iy + frow;
-      } else
-      {
-        dY = frow;
-      }
-      pSubPixelY[x] = dY;
-      pSubPixelX[x] = dX;
+    dX = fcol - (1.0/det)*(Ixy*Iy - Iyy*Ix);
+    dY = frow - (1.0/det)*(Ixy*Ix - Ixx*Iy);
+
+    pSubPixelY[x] = dY;
+    pSubPixelX[x] = dX;
   }
 }

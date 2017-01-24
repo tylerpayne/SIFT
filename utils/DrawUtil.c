@@ -1,13 +1,8 @@
 #include "DrawUtil.h"
 
-
 GtkWidget* newWindowImpl(DrawUtil* self)
 {
   GtkWidget* window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-  if (self->defaultWindow == NULL)
-  {
-    self->defaultWindow = window;
-  }
   return window;
 }
 
@@ -15,13 +10,10 @@ void drawImageImpl(DrawUtil* self, Image* im, GtkWidget* window)
 {
   if (window == NULL)
   {
-    if (self->defaultWindow == NULL)
-    {
-      self->newWindow(self);
-    }
+    window = self->newWindow(self);
     GtkWidget* imageWidget = gtk_image_new_from_pixbuf((GdkPixbuf*)(im->pixbuf));
-    gtk_container_add(GTK_CONTAINER(self->defaultWindow),imageWidget);
-    gtk_widget_show_all(self->defaultWindow);
+    gtk_container_add(GTK_CONTAINER(window),imageWidget);
+    gtk_widget_show_all(window);
   }
   else
   {
@@ -35,10 +27,7 @@ void drawKeypointsImpl(DrawUtil* self, Array* keypoints, Image* im, GtkWidget* w
 {
   if (window == NULL)
   {
-    if (self->defaultWindow == NULL)
-    {
-      self->newWindow(self);
-    }
+    window = self->newWindow(self);
     GdkPixbuf* displaybuf = gdk_pixbuf_copy((GdkPixbuf*)(im->pixbuf));
     Keypoint** kpList = (Keypoint**)(keypoints->ptr);
     int radius = 9;
@@ -65,10 +54,10 @@ void drawKeypointsImpl(DrawUtil* self, Array* keypoints, Image* im, GtkWidget* w
       }
     }
     GtkWidget* imageWidget = gtk_image_new_from_pixbuf(displaybuf);
-    gtk_container_add(GTK_CONTAINER(self->defaultWindow),imageWidget);
-    g_signal_connect(G_OBJECT(self->defaultWindow), "destroy",
+    gtk_container_add(GTK_CONTAINER(window),imageWidget);
+    g_signal_connect(G_OBJECT(window), "destroy",
       G_CALLBACK(gtk_main_quit), NULL);
-    gtk_widget_show_all(self->defaultWindow);
+    gtk_widget_show_all(window);
   }
   else
   {
@@ -82,7 +71,6 @@ void drawKeypointsImpl(DrawUtil* self, Array* keypoints, Image* im, GtkWidget* w
 DrawUtil* GetDrawUtil()
 {
   DrawUtil* self = (DrawUtil*)malloc(sizeof(DrawUtil));
-  self->defaultWindow = NULL;
   GError* err = NULL;
   const char* path = "im_keypoint.png";
   self->keypoint = gdk_pixbuf_new_from_file(path, &err);

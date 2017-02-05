@@ -14,7 +14,7 @@ A collection of math utilities , data structures, and computer vision methods al
   int g1s = 5; // Sigma of Gaussian Kernel 1
   int g2s = 3; // Sigma of Gaussian Kernel 2
   int mw = 15; // Width of LocalMax window
-  char* saves = "DoG.png"; // Filepath to save to
+  char* saves = "DoG"; // filename to save to
   char* path = "image.png"; // Filepath to load from
   //Init the utilities
   MatrixUtil* matutil = GetMatrixUtil(); // Get CUDA MatrixUtil
@@ -35,7 +35,7 @@ A collection of math utilities , data structures, and computer vision methods al
   //Find corners (local maximums)
   Image* corners = imutil->max(imutil,DoGImage,mw);
   //Save image
-  ioutil->saveImageToFile(ioutil,corners,saves); // This is the only function that copies memory from device to host
+  ioutil->saveImageToFile(ioutil,corners,saves,PNG); // Save "DoG.png"
   .
   .
   .

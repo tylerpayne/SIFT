@@ -1,13 +1,15 @@
 # computervision
 ####(UNDER DEVELOPMENT)
 
-A collection of math utilities , data structures, and computer vision methods and all implemented in C and accelerated with [CUDA v8.0].
+A collection of math utilities , data structures, and computer vision methods all implemented in C and accelerated with [CUDA v8.0].
 
 # Example
 ```C
   #include <utils/ImageUtil.h>
   #include <generators/Filters.h>
-
+  .
+  .
+  .
   int gw = 8; // Width of Gaussian Kernels
   int g1s = 5; // Sigma of Gaussian Kernel 1
   int g2s = 3; // Sigma of Gaussian Kernel 2
@@ -34,6 +36,9 @@ A collection of math utilities , data structures, and computer vision methods an
   Image* corners = imutil->max(imutil,DoGImage,mw);
   //Save image
   ioutil->saveImageToFile(ioutil,corners,saves); // This is the only function that copies memory from device to host
+  .
+  .
+  .
 ```
 ![lena] ![corners]
 [CUDA v8.0]:https://developer.nvidia.com/cuda-toolkit

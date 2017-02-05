@@ -1,3 +1,10 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <structs/TreeNode.h>
+
+#ifndef _HEAP_
+#define _HEAP_
+
 typedef struct Heap Heap;
 
 typedef void (*addHeapFunc)(Heap*,TreeNode*);
@@ -21,4 +28,6 @@ struct Heap
   swapHeapFunc swap;
 };
 
-Heap* NewHeap(int maxSize);
+DLLEXPORT Heap* NewHeap(int maxSize);
+
+#endif

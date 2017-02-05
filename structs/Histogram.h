@@ -1,5 +1,8 @@
-#include <stdlib.h>
-#include "List.h"
+#include <structs/stdlib.h>
+#include <structs/List.h>
+
+#ifndef _HISTOGRAM_
+#define _HISTOGRAM_
 
 typedef struct Histogram Histogram;
 
@@ -20,4 +23,6 @@ struct Histogram
   tossOutliersFunc tossOutliers;
 };
 
-Histogram* NewHistogram(float range,int nbins);
+DLLEXPORT Histogram* NewHistogram(float range,int nbins);
+
+#endif

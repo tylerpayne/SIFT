@@ -1,4 +1,4 @@
-#include "KDTree.h"
+#include <structs/KDTree.h>
 
 TreeNode* recSearchKDTreeImpl(KDTree* self, TreeNode* node, Matrix* value, int k, PriorityQ* pq)
 {
@@ -176,7 +176,7 @@ void populateKDTree(KDTree* self)
   recLTPopulateKDTree(self,self->root,orderedNodes,nMedian,nPoints-(nMedian),1);
 }
 
-KDTree* NewKDTree(Keypoint** data, int nPoints, int kDimensions)
+DLLEXPORT KDTree* NewKDTree(Keypoint** data, int nPoints, int kDimensions)
 {
   printf("Building KDTree\n");
   KDTree* self = (KDTree*)malloc(sizeof(KDTree));

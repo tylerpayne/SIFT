@@ -1,4 +1,8 @@
-#include "DrawUtil.h"
+#include <utils/DrawUtil.h>
+
+#ifdef __cplusplus
+  extern "C" {
+#endif
 
 GtkWidget* newWindowImpl(DrawUtil* self)
 {
@@ -35,9 +39,9 @@ void drawKeypointsImpl(DrawUtil* self, Array* keypoints, Image* im, GtkWidget* w
     {
       GdkPixbuf* src = gdk_pixbuf_copy(self->keypoint);
       Keypoint* kp = kpList[i];
-      int dest_x = (int)(kp->position[0]) - radius;
-      int dest_y = (int)(kp->position[1]) - radius;
-      if (dest_x >= 0 && dest_y >= 0 && dest_x + radius*2 < im->shape[0] && dest_y + radius*2 < im->shape[1])
+      int dest_x = (int)(kp->position.x) - radius;
+      int dest_y = (int)(kp->position.y) - radius;
+      if (dest_x >= 0 && dest_y >= 0 && dest_x + radius*2 < im->shape.width && dest_y + radius*2 < im->shape.height)
       {
         gdk_pixbuf_composite                (src,
                                                            displaybuf,
@@ -68,7 +72,7 @@ void drawKeypointsImpl(DrawUtil* self, Array* keypoints, Image* im, GtkWidget* w
 }
 
 
-DrawUtil* GetDrawUtil()
+DLLEXPORT DrawUtil* GetDrawUtil()
 {
   DrawUtil* self = (DrawUtil*)malloc(sizeof(DrawUtil));
   GError* err = NULL;
@@ -79,3 +83,7 @@ DrawUtil* GetDrawUtil()
   self->drawKeypoints = drawKeypointsImpl;
   return self;
 }
+
+#ifdef __cplusplus
+  }
+#endif

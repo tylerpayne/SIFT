@@ -1,4 +1,4 @@
-#include "TreeNode.h"
+#include <structs/TreeNode.h>
 
 int postorderHeight(TreeNode* self, int height)
 {

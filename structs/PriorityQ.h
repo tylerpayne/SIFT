@@ -1,4 +1,7 @@
-#include "Heap.c"
+#include <structs/Heap.h>
+
+#ifndef _PRIORITYQ_
+#define _PRIORITYQ_
 
 typedef struct PriorityQ PriorityQ;
 
@@ -13,4 +16,5 @@ struct PriorityQ
   deqFunc deQ;
 };
 
-PriorityQ* NewPriorityQ(int capacity);
+DLLEXPORT PriorityQ* NewPriorityQ(int capacity);
+#endif

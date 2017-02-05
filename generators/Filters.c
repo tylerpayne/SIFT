@@ -1,4 +1,4 @@
-#include "Filters.h"
+#include <generators/Filters.h>
 
 Image* makeGaussianKernelImpl(Filters* self, int width, float std)
 {
@@ -7,6 +7,7 @@ Image* makeGaussianKernelImpl(Filters* self, int width, float std)
   float variance = std*std;
   //float coeff = 1.0/(2*M_PI);
   float sum = 0;
+  Shape shape = {width,width};
   for (int j = 0; j < width; j++)
   {
     for (int i = 0; i < width; i++)
@@ -15,21 +16,20 @@ Image* makeGaussianKernelImpl(Filters* self, int width, float std)
       float y = i-radius;
       float power = -1.0*(((x*x)+(y*y))/(2*variance));
       float val = exp(power);
-      data[IDX2C(i,j,width)] = val;
+      Point2 point = {j,i};
+      data[IDX2C(point,shape)] = val;
       sum += val;
-      //printf("[ %f ]",data[IDX2C(i,j,width)]);
     }
-    //printf("\n");
   }
   for (int r = 0; r < width*width; r++)
   {
     data[r] = data[r]/sum;
   }
 
-  return self->imutil->newImage(self->imutil,data,width,width);
+  return self->imutil->newImage(self->imutil,data,shape);
 }
 
-Filters* NewFilters(ImageUtil* imutil)
+DLLEXPORT Filters* NewFilters(ImageUtil* imutil)
 {
   Filters* self = (Filters*)malloc(sizeof(Filters));
   self->imutil = imutil;

@@ -1,10 +1,11 @@
 #include <utils/MatrixUtil.h>
 #include <utils/ImageUtil.h>
-#include <structs/Keypoint.c>
-#include <cv/Extractor.c>
-#include <cv/Matcher.c>
-#include <utils/IOUtil.c>
-#include <utils/DrawUtil.c>
+#include <structs/Keypoint.h>
+#include <generators/Filters.h>
+#include <operators/Extractor.h>
+#include <operators/Matcher.h>
+#include <utils/IOUtil.h>
+#include <utils/DrawUtil.h>
 
 int main(int argc, char const *argv[]) {
   char** gargv = argv;
@@ -25,16 +26,31 @@ int main(int argc, char const *argv[]) {
   DrawUtil* drawutil = GetDrawUtil();
 
   Image* l_image = ioutil->loadImageFromFile(ioutil,"lena.png");
-  Array* l_points = extractor->findCornerKeypoints(extractor,l_image,9,9,5,15,NULL);
+  Image* gauss1 = extractor->filters->makeGaussianKernel(extractor->filters,15,15);
+  Image* gauss2 = extractor->filters->makeGaussianKernel(extractor->filters,15,9);
+  Image* DoGKernel = extractor->imutil->subtract(extractor->imutil,gauss1,gauss2);
+  gauss1->free(gauss1);
+  gauss2->free(gauss2);
+  Image* DoGImage = extractor->imutil->convolve(extractor->imutil,l_image,DoGKernel);
+  DoGKernel->free(DoGKernel);
+  ImageIndexPair* corners = extractor->imutil->maxIdx(extractor->imutil,DoGImage,50);
+//  printf("Subpixel start\n");
+  imutil->subPixelAlignImageIndexPair(imutil,corners);
+//  printf("subpixel\n");
+  /*Image* contrast = extractor->imutil->localContrast(extractor->imutil,l_image,100);
+  printf("made contrast imageage\n");
+  corners->image = contrast;
+  extractor->imutil->eliminatePointsBelowThreshold(extractor->imutil,corners,NULL);
+  /*Array* l_points = extractor->findCornerKeypoints(extractor,l_image,9,9,5,50,NULL);
   Matrix* l_features = extractor->makeFeatureMatrixFromKeypointDescriptors(extractor,l_points);
   Image* l_featim = imutil->newImageFromMatrix(imutil,l_features);
-  ioutil->saveImageToFile(ioutil,l_featim,ioutil->appendNumberToFilename("test",100),PNG);
+  ioutil->saveImageToFile(ioutil,l_featimage,ioutil->appendNumberToFilename("test",100),PNG);
 /*
   Image* r_image = ioutil->loadImageFromFile(ioutil,"right015.png");
   Array* r_points = extractor->findCornerKeypoints(extractor,r_image,15,5,3,9,NULL);
   Matrix* r_features = extractor->makeFeatureMatrixFromKeypointDescriptors(extractor,r_points);
   Image* r_featim = imutil->newImageFromMatrix(imutil,r_features);
-  ioutil->saveImageToFile(ioutil,r_featim,"r_featurematriximage.png",PNG);
+  ioutil->saveImageToFile(ioutil,r_featimage,"r_featurematriximage.png",PNG);
 
   Image* matches = matcher->findMatches(matcher,l_features,r_features,l_points,r_points);
   ioutil->saveImageToFile(ioutil,matches,"matches.png",PNG);
@@ -110,8 +126,8 @@ int main(int argc, char const *argv[]) {
   //imutil->subPixelAlignImageIndexPair(imutil,corners);
   //ioutil->saveImageToFile(ioutil,DoGImage,"gdklena.png",PNG);
   */
-  drawutil->drawKeypoints(drawutil,l_points,l_image,NULL);
-  gtk_main();
+  //drawutil->drawKeypoints(drawutil,l_points,l_image,NULL);
+  //gtk_main();
   cudaDeviceReset();
   return 0;
 }

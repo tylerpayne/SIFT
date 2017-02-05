@@ -1,4 +1,4 @@
-#include "PriorityQ.h"
+#include <structs/PriorityQ.h>
 
 void enQImpl(PriorityQ* self, TreeNode* node, float priority)
 {
@@ -15,7 +15,7 @@ TreeNode* deQImpl(PriorityQ* self)
   return (TreeNode*)((self->heap->pop(self->heap))->value);
 }
 
-PriorityQ* NewPriorityQ(int capacity)
+DLLEXPORT PriorityQ* NewPriorityQ(int capacity)
 {
   PriorityQ* self = (PriorityQ*)malloc(sizeof(PriorityQ));
   self->size = 0;

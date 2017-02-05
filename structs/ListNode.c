@@ -1,4 +1,4 @@
-#include "ListNode.h"
+#include <structs/ListNode.h>
 
 void insertBeforeImpl(ListNode* self, ListNode* n)
 {
@@ -28,7 +28,7 @@ void insertAfterImpl(ListNode* self, ListNode* n)
   }
 }
 
-ListNode* NewListNode(void* value)
+DLLEXPORT ListNode* NewListNode(void* value)
 {
   ListNode* node = (ListNode*)malloc(sizeof(ListNode));
   node->insertBefore = insertBeforeImpl;

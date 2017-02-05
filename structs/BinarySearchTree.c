@@ -1,4 +1,4 @@
-#include "BinarySearchTree.h"
+#include <structs/BinarySearchTree.h>
 
 int isRightChildBSTImpl(TreeNode* this)
 {
@@ -165,7 +165,7 @@ void addBSTNodeImpl(BinarySearchTree* self, TreeNode* node)
 }
 
 
-BinarySearchTree* NewBinarySearchTree()
+DLLEXPORT BinarySearchTree* NewBinarySearchTree()
 {
   BinarySearchTree* bst = (BinarySearchTree*)malloc(sizeof(BinarySearchTree));
   bst->size = 0;

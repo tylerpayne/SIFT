@@ -1,4 +1,7 @@
-#include "Image.h"
+#include <structs/Image.h>
+
+#ifndef _IMAGEUTIL_
+#define _IMAGEUTIL_
 
 typedef struct ImageIndexPair ImageIndexPair;
 
@@ -21,10 +24,10 @@ struct ImageGradientVectorPair
 
 typedef struct ImageUtil ImageUtil;
 
-typedef Image* (*newImageFromHostFloatFunc)(ImageUtil*,float*,int,int);
+typedef Image* (*newImageFromHostFloatFunc)(ImageUtil*,float*,Shape);
 typedef Image* (*newImageFromMatrixFunc)(ImageUtil*, Matrix*);
-typedef Image* (*newEmptyImageFunc)(ImageUtil*, int, int );
-typedef Image* (*downsampleImageFunc)(ImageUtil*,Image*,int,int);
+typedef Image* (*newEmptyImageFunc)(ImageUtil*, Shape);
+typedef Image* (*downsampleImageFunc)(ImageUtil*,Image*,Shape);
 typedef Image* (*imimFunc)(ImageUtil*,Image*,Image*);
 typedef Image* (*imintFunc)(ImageUtil*,Image*,int);
 typedef ImageIndexPair* (*rIMIDXimintFunc)(ImageUtil*,Image*,int);
@@ -37,6 +40,7 @@ typedef Matrix* (*makeFeatureDescriptorFunc)(ImageUtil*,Image*,int*,int);
 typedef Matrix** (*makeFeatureDescriptorsForImageIndexPairFunc)(ImageUtil*,ImageIndexPair*,Image*,int);
 typedef void (*unorientFeatureMatrixFunc)(ImageUtil*, Matrix*, int);
 typedef Matrix* (*generalizeFeatureMatrixFunc)(ImageUtil*, Matrix*, int);
+typedef void (*eliminatePointsFunc)(ImageUtil*,ImageIndexPair*,float*);
 
 
 struct ImageUtil
@@ -65,6 +69,10 @@ struct ImageUtil
   makeFeatureDescriptorsForImageIndexPairFunc makeFeatureDescriptorsForImageIndexPair;
   unorientFeatureMatrixFunc unorientFeatureMatrix;
   generalizeFeatureMatrixFunc generalizeFeatureMatrix;
+  eliminatePointsFunc eliminatePointsBelowThreshold;
+  eliminatePointsFunc eliminateEdgePoints;
 };
 
 DLLEXPORT ImageUtil* GetImageUtil(MatrixUtil* matutil);
+
+#endif

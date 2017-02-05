@@ -1,4 +1,4 @@
-#include "Keypoint.h"
+#include <structs/Keypoint.h>
 
 void setKeyValKeypointImpl(Keypoint* self, char* key, void* val)
 {
@@ -26,14 +26,12 @@ void removeKeyKeypointImpl(Keypoint* self, char* key)
   self->dictionary->remove(self->dictionary,self->dictionary->getKey(self->dictionary,key)->key.ival);
 }
 
-Keypoint* NewKeypoint(float x, float y, Image* image)
+DLLEXPORT Keypoint* NewKeypoint(float x, float y, Image* image)
 {
   Keypoint* kp = (Keypoint*)malloc(sizeof(Keypoint));
   List* list = NewList();
 
-  float* pos = (float*)malloc(sizeof(float)*2);
-  pos[0] = x;
-  pos[1] = y;
+  Point2f pos = {x,y};
 
   kp->dictionary = list;
   kp->position = pos;

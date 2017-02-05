@@ -9,18 +9,51 @@ GTKPATH = C:/gtk
 CV_MATRIXUTIL = utils/CUDAMatrixUtil.cu
 CV_IMAGEUTIL = utils/CUDAImageUtil.cu
 
+CV_UTILS = IOUtil DrawUtil
+CV_STRUCTS = ListNode BinaryTreeNode HeapNode List Keypoint Heap PriorityQ
+CV_OPERATORS = Extractor
+CV_GENERATORS = Filters
+
 CUPATH = C:/Program\ Files/NVIDIA\ GPU\ Computing\ Toolkit/CUDA/v8.0
 
-.PHONY : utils app all
+.PHONY : structs utils operators generators app all
+
+all: clean structs utils generators operators
+
+_structs:
+	nvcc -shared --compiler-options="-D EXPORTING" -I./ -o lib/$(REC_STRUCT) ./structs/$(REC_STRUCT).c -L./lib $(foreach lib,$(wildcard ./lib/*.lib),-l$(subst ./lib/,,$(subst .lib,,$(lib))))
+
+structs:
+	echo "BUILDING STRUCTS\n"
+	$(foreach obj,$(CV_STRUCTS),$(MAKE) REC_STRUCT="$(obj)" _structs;)
+
+_utils:
+	nvcc -shared --compiler-options="-D EXPORTING" -I./ $(GTKCFLAGS) -o lib/$(REC_UTIL) ./utils/$(REC_UTIL).c -L./lib -L$(GTKPATH)/lib $(GTKLIBS) $(foreach lib,$(wildcard ./lib/*.lib),-l$(subst ./lib/,,$(subst .lib,,$(lib))))
 
 utils:
-	nvcc -shared --compiler-options="-D EXPORTING" -I./ -I./bin -o CUDAMatrixUtil $(CV_MATRIXUTIL) $(CUDALIBS)
-	nvcc -shared --compiler-options="-D EXPORTING" -I./ -I./bin -o CUDAImageUtil $(CV_IMAGEUTIL) -L./bin -lCUDAMatrixUtil $(CUDALIBS)
+	echo "BUILDING UTILS\n"
+	nvcc -shared --compiler-options="-D EXPORTING" -I./ -I./lib -o lib/CUDAMatrixUtil $(CV_MATRIXUTIL) -L./lib $(CUDALIBS)
+	nvcc -shared --compiler-options="-D EXPORTING" -I./ -I./lib -o lib/CUDAImageUtil $(CV_IMAGEUTIL) -L./lib -lCUDAMatrixUtil $(CUDALIBS)
+	$(foreach obj,$(CV_UTILS),$(MAKE) REC_UTIL="$(obj)" _utils;)
+
+_operators:
+	nvcc -shared --compiler-options="-D EXPORTING" -I./ -o lib/$(REC_OPERATOR) ./operators/$(REC_OPERATOR).c -L./lib $(foreach lib,$(wildcard ./lib/*.lib),-l$(subst ./lib/,,$(subst .lib,,$(lib))))
+
+operators:
+	echo "BUILDING OPERATORS\n"
+	$(foreach obj,$(CV_OPERATORS),$(MAKE) REC_OPERATOR="$(obj)" _operators;)
+
+_generators:
+	nvcc -shared --compiler-options="-D EXPORTING" -I./ -o lib/$(REC_GENERATOR) ./generators/$(REC_GENERATOR).c -L./lib $(foreach lib,$(wildcard ./lib/*.lib),-l$(subst ./lib/,,$(subst .lib,,$(lib))))
+
+generators:
+	echo "BUILDING GENERATOR\n"
+	$(foreach obj,$(CV_GENERATORS),$(MAKE) REC_GENERATOR="$(obj)" _generators;)
+
 
 app:
-	nvcc -I./ -I./bin $(GTKCFLAGS) -o $(OUTPUT) $(INPUT) -L./ -L$(GTKPATH)/lib -lCUDAMatrixUtil -lCUDAImageUtil $(GTKLIBS)
+	nvcc -I./ -I./lib/ $(GTKCFLAGS) -o $(OUTPUT) $(INPUT) -L./ -L./lib/ -L$(GTKPATH)/lib $(foreach lib,$(wildcard ./lib/*.lib),-l$(subst ./lib/,,$(subst .lib,,$(lib)))) $(GTKLIBS)
 
-all: utils app
 
 clean:
 	rm -rf *.obj
@@ -28,9 +61,9 @@ clean:
 	rm -rf *.exe
 	rm -rf *.lib
 	rm -rf *.exp
-	rm -rf bin/*.a
-	rm -rf bin/*.exe
-	rm -rf bin/*.lib
-	rm -rf bin/*.exp
-	rm -rf bin/*.obj
-	rm -rf bin/*.dll
+	rm -rf lib/*.a
+	rm -rf lib/*.exe
+	rm -rf lib/*.lib
+	rm -rf lib/*.exp
+	rm -rf lib/*.obj
+	rm -rf lib/*.dll

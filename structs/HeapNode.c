@@ -1,4 +1,4 @@
-#include "TreeNode.h"
+#include <structs/TreeNode.h>
 
 int getHeightImpl(TreeNode* self)
 {
@@ -88,7 +88,7 @@ void freeHeapNodeImpl(TreeNode* self)
   free(self);
 }
 
-TreeNode* NewHeapNode(Key key)
+DLLEXPORT TreeNode* NewHeapNode(Key key)
 {
   TreeNode* self = (TreeNode*)malloc(sizeof(TreeNode));
   self->key = key;

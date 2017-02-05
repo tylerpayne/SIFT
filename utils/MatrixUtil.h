@@ -1,4 +1,7 @@
-#include "Matrix.h"
+#include <structs/Matrix.h>
+
+#ifndef _MATRIXUTIL_
+#define _MATRIXUTIL_
 
 typedef struct MatrixUtil MatrixUtil;
 
@@ -13,8 +16,8 @@ typedef Matrix* (*mTFunc)(MatrixUtil* , Matrix *);
 typedef Matrix* (*mSFunc)(MatrixUtil* , Matrix *, Matrix*);
 typedef void (*m1fFunc)(MatrixUtil* , Matrix *, float, Matrix*);
 typedef void (*mrFunc)(MatrixUtil* , Matrix*, Matrix*);
-typedef Matrix* (*newMatrixFunc)(int,int);
-typedef Matrix* (*newMatrixWithFloatFunc)(float*,int,int);
+typedef Matrix* (*newMatrixFunc)(Shape);
+typedef Matrix* (*newMatrixWithFloatFunc)(float*,Shape);
 typedef void (*prettyPrintFunc)(MatrixUtil*,Matrix*,char*);
 typedef void (*syncMatrixFunc)(MatrixUtil* , Matrix*);
 typedef void (*mCopyFunc)(MatrixUtil*,Matrix*,Matrix*,Rect,Point2,Point2);
@@ -62,3 +65,5 @@ DLLEXPORT MatrixUtil* GetMatrixUtil();
 DLLEXPORT void copyDeviceToDeviceCudaMatrix(Matrix* A, Matrix* B);
 DLLEXPORT void copyHostToDeviceCudaMatrix(Matrix* mat);
 DLLEXPORT void copyDeviceToHostCudaMatrix(Matrix* mat);
+
+#endif

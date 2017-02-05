@@ -1,4 +1,10 @@
-#include "List.c"
+#include <structs/Matrix.h>
+#include <structs/Image.h>
+#include <structs/ListNode.h>
+#include <structs/List.h>
+
+#ifndef _KEYPOINT_
+#define _KEYPOINT_
 
 typedef struct Keypoint Keypoint;
 
@@ -9,11 +15,12 @@ typedef void* (*getKeyKeypointFunc)(Keypoint*, char*);
 struct Keypoint
 {
   Image* sourceImage;
-  float* position;
+  Point2f position;
   List* dictionary;
   addKeyValKeypointFunc set;
   getKeyKeypointFunc get;
   removeKeyKeypointFunc remove;
 };
 
-Keypoint* NewKeypoint(float x, float y, Image* image);
+DLLEXPORT Keypoint* NewKeypoint(float x, float y, Image* image);
+#endif _KEYPOINT_

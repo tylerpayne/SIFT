@@ -243,11 +243,15 @@ __device__ float ReadSubPixelKernel(float* pSrc, NppiSize oSize, float x, float 
     {
       float thisV = (y-Yidx) + v;
       float thisU = (x-Xidx) + u;
-      if (Yidx+v >= 0 && Xidx+u >= 0 && Yidx+v < oSize.height && Xidx+u < oSize.width)
-      {
-        float k = GetBiCubicKernelWeight(sqrtf((thisV*thisV)+(thisU*thisU)));
-        accum += pSrc[IDX2CKernel(Yidx+v,Xidx+u,oSize.width)]*k;
-      }
+
+      float k = GetBiCubicKernelWeight(sqrtf((thisV*thisV)+(thisU*thisU)));
+      int i = Yidx+v;
+      int j = Xidx+u;
+      i = min(i,oSize.height - 1);
+      i = max(i,0);
+      j = min(j,oSize.width - 1);
+      j = max(j,0);
+      accum += pSrc[IDX2CKernel(i,j,oSize.width)]*k;
     }
   }
   return accum;
@@ -287,23 +291,104 @@ __global__ void SubPixelAlignKernel(float* pIx, float* pIy, float* pIxx, float* 
   if (x < nIdx)
   {
     int thisIdx = pIdx[x];
-    int row = (thisIdx/oSize.width);
-    int col = thisIdx - (row*oSize.width);
-    int idx = IDX2CKernel(row,col,oSize.width);
-    Ix = pIx[idx];
-    Iy = pIy[idx];
-    Ixx = pIxx[idx];
-    Ixy = pIxy[idx];
-    Iyy = pIyy[idx];
-    det = Ixx*Iyy - Ixy*Ixy;
+    if (thisIdx >= 0 && thisIdx < oSize.width*oSize.height)
+    {
+      int row = (thisIdx/oSize.width);
+      int col = thisIdx - (row*oSize.width);
+      int idx = IDX2CKernel(row,col,oSize.width);
+      Ix = pIx[idx];
+      Iy = pIy[idx];
+      Ixx = pIxx[idx];
+      Ixy = pIxy[idx];
+      Iyy = pIyy[idx];
+      det = Ixx*Iyy - Ixy*Ixy;
 
-    float frow = (float)row;
-    float fcol = (float)col;
+      float frow = (float)row;
+      float fcol = (float)col;
 
-    dX = fcol - (1.0/det)*(Ixy*Iy - Iyy*Ix);
-    dY = frow - (1.0/det)*(Ixy*Ix - Ixx*Iy);
+      dX = fcol - (1.0/det)*(Ixy*Iy - Iyy*Ix);
+      dY = frow - (1.0/det)*(Ixy*Ix - Ixx*Iy);
 
-    pSubPixelY[x] = dY;
-    pSubPixelX[x] = dX;
+      pSubPixelY[x] = dY;
+      pSubPixelX[x] = dX;
+    } else
+    {
+      pSubPixelY[x] = -1;
+      pSubPixelX[x] = -1;
+    }
+  }
+}
+
+
+extern __shared__ int sharedData[];
+__global__ void EliminatePointsBelowThresholdKernel(float* pI, NppiSize oSize, float* pSubPixelX, float* pSubPixelY, int* pIndex, int nPoints, float* keepSubPixelX, float* keepSubPixelY, int* keepPoints, int* keepCount, float threshold)
+{
+  int x = (blockIdx.x * blockDim.x) + threadIdx.x;
+
+  int* thisKeepPoints;
+  int* thisKeepCount;
+
+  thisKeepPoints = &sharedData[x];
+  thisKeepCount = &sharedData[nPoints];
+
+  if (x < nPoints)
+  {
+    float thisx = pSubPixelX[x];
+    float thisy = pSubPixelY[x];
+
+    if (thisx >= 0 && thisy >= 0 && thisx < oSize.width && thisy < oSize.height)
+    {
+      float contrast = ReadSubPixelKernel(pI,oSize,thisx,thisy);
+      if (contrast > threshold)
+      {
+        int inc = 1;
+        //unsigned int id = atomicAdd(thisKeepCount,inc);
+        //if (id < nPoints)
+        //{
+          //thisKeepPoints[id] = x;
+        //}
+      }
+    }
+  }
+  __syncthreads();
+  if (threadIdx.x == 0)
+  {
+    for (int i = 0; i < *thisKeepCount; i++)
+    {
+      int id = thisKeepPoints[i];
+      if (id > 0)
+      {
+        keepSubPixelX[x] = pSubPixelX[thisKeepPoints[i]];
+        keepSubPixelY[x] = pSubPixelY[thisKeepPoints[i]];
+        keepPoints[x] = pIndex[thisKeepPoints[i]];
+      }
+    }
+  }
+}
+
+__global__ void EliminateEdgePointsKernel(float* pI, NppiSize oSize, float* pSubPixelX, float* pSubPixelY, int* pIndex, int nPoints, float* pIx, float* pIy, float* keepSubPixelX, float* keepSubPixelY, int* keepPoints, int* keepCount, float threshold)
+{
+  int x = (blockDim.x * blockIdx.x) + threadIdx.x;
+
+  if (x < nPoints)
+  {
+    float thisx = pSubPixelX[x];
+    float thisy = pSubPixelY[x];
+
+    float Ix = ReadSubPixelKernel(pIx,oSize,thisx,thisy);
+    float Iy = ReadSubPixelKernel(pIy,oSize,thisx,thisy);
+
+    if (Ix > threshold && Iy > threshold)
+    {
+      float percent = fminf(Ix/Iy,Iy/Ix);
+      if (percent > 0.4)
+      {
+        int id = atomicAdd(keepCount,1);
+        keepPoints[id] = pIndex[x];
+        keepSubPixelX[id] = pSubPixelX[x];
+        keepSubPixelY[id] = pSubPixelY[x];
+      }
+    }
+
   }
 }

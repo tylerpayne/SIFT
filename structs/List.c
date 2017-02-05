@@ -1,5 +1,5 @@
-#include "List.h"
-#include <string.h>
+#include <structs/List.h>
+
 //Get Node by String Key
 ListNode* getSImpl(List* self, char* key)
 {
@@ -162,7 +162,7 @@ void insertImpl(List *self, ListNode* node, int idx)
   }
 }
 
-List* NewList()
+DLLEXPORT List* NewList()
 {
   List* list = (List*)malloc(sizeof(List));
   list->get = getImpl;

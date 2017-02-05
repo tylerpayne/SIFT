@@ -1,4 +1,4 @@
-#include "Heap.h"
+#include <structs/Heap.h>
 
 int nParentOf(int idx)
 {
@@ -164,7 +164,7 @@ void reheapDownImpl(Heap* self)
   }
 }
 
-Heap* NewHeap(int maxSize)
+DLLEXPORT Heap* NewHeap(int maxSize)
 {
   Heap* self = (Heap*)malloc(sizeof(Heap));
   self->nodes = (TreeNode*)malloc(sizeof(TreeNode)*maxSize);

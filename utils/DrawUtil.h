@@ -1,6 +1,11 @@
-#ifndef GLIB_MAJOR_VERSION
-  #include <gtk/gtk.h>
-#endif
+#include <string.h>
+#include <gtk/gtk.h>
+#include <utils/MatrixUtil.h>
+#include <utils/ImageUtil.h>
+#include <structs/Keypoint.h>
+
+#ifndef _DRAWUTIL_
+#define _DRAWUTIL_
 
 typedef struct DrawUtil DrawUtil;
 
@@ -16,4 +21,6 @@ struct DrawUtil
   drawKeypointsFunc drawKeypoints;
 };
 
-DrawUtil* GetDrawUtil();
+DLLEXPORT DrawUtil* GetDrawUtil();
+
+#endif

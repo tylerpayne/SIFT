@@ -1,4 +1,8 @@
-#include "ListNode.c"
+#include <structs/ListNode.h>
+#include <string.h>
+
+#ifndef _LIST_
+#define _LIST_
 
 typedef struct List List;
 
@@ -23,4 +27,5 @@ struct List
   int count;
 };
 
-List* NewList();
+DLLEXPORT List* NewList();
+#endif

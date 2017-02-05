@@ -12,25 +12,13 @@
   #endif
 #endif
 
+#ifndef _CORE_
+#define _CORE_
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "Array.h"
-
-// (i,j) == (row,col)
-int IDX2C(int i, int j, int td)
-{
-  return (i*td)+j;
-}
-
-// (retval[0],retval[1]) == (i,j)
-int* C2IDX(int i, int td)
-{
-  int* retval = (int*)malloc(sizeof(int)*2);
-  retval[0] = i/td;
-  retval[1] = i-(retval[0]*td);
-  return retval;
-}
+#include <structs/Array.h>
 
 typedef struct {
   int x;
@@ -71,6 +59,10 @@ typedef struct {
 typedef struct {
   int width;
   int height;
+} Shape;
+
+typedef struct {
+  Shape shape;
   Point2 origin;
 } Rect;
 
@@ -80,12 +72,12 @@ enum keyType {
   STRING = 2,
 };
 
-enum imType {
+typedef enum {
   JPEG=0,
   PNG=1,
   ICO=2,
   BMP=3,
-};
+} IMTYPE;
 
 const char* IMFORMATS[] = {"jpeg","png","ico","bmp"};
 
@@ -119,3 +111,18 @@ Key NewStringKey(char* s)
   k.type = STRING;
   return k;
 }
+
+int IDX2C(Point2 index, Shape shape)
+{
+  return (index.y*shape.width)+index.x;
+}
+
+Point2 C2IDX(int i, Shape shape)
+{
+  int y = i/shape.width;
+  int x = i-(y*shape.width);
+  Point2 retval = {x,y};
+  return retval;
+}
+
+#endif

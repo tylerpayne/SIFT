@@ -3,6 +3,7 @@
 //(Keypoint*)Array.ptr
 Array* findCornerKeypointsImpl(Extractor* self, Image* im, int gaussWidth, float gauss1Sigma, float gauss2Sigma, int localMaxWindow, float* contrastTreshold)
 {
+
   if (contrastTreshold == NULL)
   {
     float zzz = 0.01;
@@ -31,15 +32,15 @@ Array* findCornerKeypointsImpl(Extractor* self, Image* im, int gaussWidth, float
   printf("edges\n");
   Image* angle = self->imutil->gradientAngle(self->imutil,im);
   Matrix** features = self->imutil->makeFeatureDescriptorsForImageIndexPair(self->imutil,corners,angle,16);
-  //angle->free(angle);
+  angle->free(angle);
   Keypoint** keypoints = (Keypoint**)malloc(sizeof(Keypoint*)*corners->count);
   int TOTALCOUNT = 0;
   for (int i = 0; i < corners->count; i++)
   {
-    int* idx = C2IDX(corners->index[i],im->shape[0]);
+    Point2 idx = C2IDX(corners->index[i],im->shape);
     float X = corners->subPixelX[i];
     float Y = corners->subPixelY[i];
-    if (idx[0] <= 0 || idx[1] <= 0)
+    if (idx.x <= 0 || idx.y <= 0)
     {
       continue;
     }
@@ -48,7 +49,6 @@ Array* findCornerKeypointsImpl(Extractor* self, Image* im, int gaussWidth, float
     kp->set(kp,"feature",(void*)(features[i]));
     keypoints[TOTALCOUNT] = kp;
     TOTALCOUNT++;
-    free(idx);
   }
   contrast->free(contrast);
   corners->image->free(corners->image);
@@ -70,19 +70,27 @@ Matrix* makeFeatureMatrixFromKeypointDescriptorsImpl(Extractor* self, Array* key
   int featureDim;
   Keypoint* kp = ((Keypoint**)keypoints->ptr)[0];
   Matrix* feat = (Matrix*)(kp->get(kp,"feature"));
-  featureDim = feat->shape[0]*feat->shape[1];
-  Matrix* featureMatrix = self->matutil->newEmptyMatrix(keypoints->count,featureDim);
+  featureDim = feat->shape.width*feat->shape.height;
+  Shape shape = {keypoints->count,featureDim};
+  Matrix* featureMatrix = self->matutil->newEmptyMatrix(shape);
   size_t size = sizeof(float)*featureDim;
+  Point2 origin = {0,0};
+  Rect rect = {feat->shape,origin};
+
   for (int i = 0; i < keypoints->count; i++)
   {
     Keypoint* kp = ((Keypoint**)keypoints->ptr)[i];
     Matrix* feat = (Matrix*)(kp->get(kp,"feature"));
-    featureMatrix->setRegion(featureMatrix,i,0,1,featureDim,feat->getRegion(feat,0,0,feat->shape[0],feat->shape[1]));
+    Point2 or = {i,0};
+    Shape sh = {1,featureDim};
+    Rect rect = {sh,or};
+    featureMatrix->setRegion(featureMatrix,rect,feat->getRegion(feat,rect));
   }
+
   return self->imutil->generalizeFeatureMatrix(self->imutil,featureMatrix,12);
 }
 
-Extractor* NewExtractor(ImageUtil* imutil)
+DLLEXPORT Extractor* NewExtractor(ImageUtil* imutil)
 {
   Extractor* self = (Extractor*)malloc(sizeof(Extractor));
   self->imutil = imutil;
@@ -91,6 +99,6 @@ Extractor* NewExtractor(ImageUtil* imutil)
   self->filters = filters;
   self->findCornerKeypoints = findCornerKeypointsImpl;
   self->makeFeatureMatrixFromKeypointDescriptors = makeFeatureMatrixFromKeypointDescriptorsImpl;
-//  self->makeFeatureDescriptor = makeFeatureDescriptorImpl;
+  //self->makeFeatureDescriptor = makeFeatureDescriptorImpl;
   return self;
 }

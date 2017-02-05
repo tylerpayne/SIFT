@@ -59,7 +59,7 @@ __global__ void CopyMatrixKernel(float* A, int lda, int tda, Point2 Aidx, float*
   int thisA, thisB;
   thisA = (Aidx.y + y)*tda + (Aidx.x + x);
   thisB = (Bidx.y + y)*tdb + (Bidx.x + x);
-  if (y < size.height && x < size.width)
+  if (y < size.shape.height && x < size.shape.width)
   {
     B[thisB] = A[thisA];
   }

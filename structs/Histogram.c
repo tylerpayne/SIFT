@@ -1,4 +1,4 @@
-#include "Histogram.h"
+#include <structs/Histogram.h>
 
 void addImpl(Histogram* self, float val)
 {
@@ -77,7 +77,7 @@ void tossOutliersImpl(Histogram* self, int groupSize, float errMargin)
 
 }
 
-Histogram* NewHistogram(float range, int nbins)
+DLLEXPORT Histogram* NewHistogram(float range, int nbins)
 {
   Histogram* histogram = (Histogram*)malloc(sizeof(Histogram));
   histogram->binRange = range;

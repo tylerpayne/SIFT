@@ -1,4 +1,11 @@
-#include "PriorityQ.c"
+#include <structs/Core.h>
+#include <utils/MatrixUtil.h>
+#include <structs/Keypoint.h>
+#include <structs/TreeNode.h>
+#include <structs/PriorityQ.h>
+
+#ifndef _KDTREE_
+#define _KDTREE_
 
 typedef struct KDTree KDTree;
 
@@ -16,4 +23,5 @@ struct KDTree
   searchKDTreeFunc search;
 };
 
-KDTree* NewKDTree(Keypoint** data, int nPoints, int kDimensions);
+DLLEXPORT KDTree* NewKDTree(Keypoint** data, int nPoints, int kDimensions);
+#endif

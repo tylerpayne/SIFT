@@ -1,3 +1,8 @@
+#include <structs/Core.h>
+
+#ifndef _LISTNODE_
+#define _LISTNODE_
+
 typedef struct ListNode ListNode;
 
 typedef void (* insertHereFunc)(ListNode* self, ListNode* n);
@@ -12,4 +17,5 @@ struct ListNode
   insertHereFunc insertAfter;
 };
 
-ListNode* NewListNode(void* value);
+DLLEXPORT ListNode* NewListNode(void* value);
+#endif

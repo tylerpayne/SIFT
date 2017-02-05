@@ -1,3 +1,8 @@
+#include <structs/Core.h>
+
+#ifndef _TREENODE_
+#define _TREENODE_
+
 typedef struct TreeNode TreeNode;
 
 typedef TreeNode* (*treeNodeKeyFunc)(TreeNode*,Key);
@@ -40,6 +45,7 @@ struct TreeNode
   voidTreeNode free;
 };
 
-TreeNode* NewTreeNode(Key key);
-TreeNode* NewBinaryTreeNode(Key key);
-TreeNode* NewHeapNode(Key key);
+DLLEXPORT TreeNode* NewTreeNode(Key key);
+DLLEXPORT TreeNode* NewBinaryTreeNode(Key key);
+DLLEXPORT TreeNode* NewHeapNode(Key key);
+#endif

@@ -1,5 +1,7 @@
-#include "TreeNode.c"
+#include <structs/TreeNode.h>
 
+#ifndef _BST_
+#define _BST_
 typedef struct BinarySearchTree BinarySearchTree;
 
 typedef void (*addBSTNodeFunc)(BinarySearchTree*,TreeNode*);
@@ -14,4 +16,6 @@ struct BinarySearchTree
   addBSTNodeFunc remove;
 };
 
-BinarySearchTree* NewBinarySearchTree();
+DLLEXPORT BinarySearchTree* NewBinarySearchTree();
+
+#endif

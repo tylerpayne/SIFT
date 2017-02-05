@@ -66,8 +66,8 @@ The Draw Utility uses [GTK+] v2 to display images and draw elements like keypoin
   Image* in = ioutil->loadImageFromFile(ioutil,path);
   Image* im = imutil->resample(imutil,in,256,256);
   //Create the two gaussians
-  Image* gauss1 = filters->makeGaussianKernel(imutil,gw,g1s);
-  Image* gauss2 = filters->makeGaussianKernel(imutil,gw,g2s);
+  Image* gauss1 = filters->makeGaussianKernel(filters,gw,g1s);
+  Image* gauss2 = filters->makeGaussianKernel(filters,gw,g2s);
   //Get difference of gaussian kernel
   Image* DoGKernel = imutil->subtract(imutil,gauss1,gauss2);
   //Convolve

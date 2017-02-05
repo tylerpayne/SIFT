@@ -36,24 +36,8 @@ A collection of math utilities , data structures, and computer vision methods an
   ioutil->saveImageToFile(ioutil,corners,saves); // This is the only function that copies memory from device to host
 ```
 ![lena] ![corners]
-[lodepng]: https://github.com/lvandeve/lodepng
-[CUBLAS]:http://docs.nvidia.com/cuda/cublas/index.html#axzz4UOt5b3uc
-[CUSOLVER]:http://docs.nvidia.com/cuda/cusolver/index.html#axzz4UOt5b3uc
-[MetalUnity]:https://github.com/tylerpayne/MetalUnity
-[Nvidia Performance Primitives]:http://docs.nvidia.com/cuda/npp/index.html#abstract
 [CUDA v8.0]:https://developer.nvidia.com/cuda-toolkit
 
-[MatrixUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/MatrixUtil.h
-[PrimitiveMatrixUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/PrimitiveMatrixUtil.c
-[CUDAMatrixUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/CUDAMatrixUtil.cu
-[ImageUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/ImageUtil.h
-[CUDAImageUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/CUDAImageUtil.h
-[IOUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/IOUtil.h
-[DrawUtil]:https://github.com/tylerpayne/computervision/blob/master/utils/DrawUtil.h
-[Filters]:https://github.com/tylerpayne/computervision/blob/master/cv/Filters.h
-[Extractor]:https://github.com/tylerpayne/computervision/blob/master/cv/Extractor.h
-[Matcher]:https://github.com/tylerpayne/computervision/blob/master/cv/Matcher.h
 
-[GTK+]:http://www.gtk.org
 [lena]:https://github.com/tylerpayne/computervision/blob/master/lena256.png
 [corners]:https://github.com/tylerpayne/computervision/blob/master/lenacorners.png

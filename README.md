@@ -1,64 +1,13 @@
 # computervision
 ####(UNDER DEVELOPMENT)
 
-A collection of computer vision, data structures, and math utilities all implemented in C and accelerated with [CUDA v8.0].
-
-# Data Structures
-
-## [Core]
-
-## [Matrix]
-
-## [Image]
-
-## [ListNode]
-
-## [List]
-
-## [Keypoint]
-
-## [TreeNode]
-
-## [BinaryTreeNode]
-
-## [BinarySearchTree]
-
-## [Heap]
-
-## [PriorityQ]
-
-## [KDTree]
-
-# Utils
-
-## [MatrixUtil]
-The abstract definition of the MatrixUtil class, allowing concrete implementations for different platforms (i.e. CUDA, Metal)
-
-#### [CUDAMatrixUtil]
-The [CUBLAS] and [CUSOLVER] implementation of the MatrixUtil.
-
-## [ImageUtil]
-The abstract definition of the ImageUtil class, allowing concrete implementations for different platforms (i.e. CUDA, Metal). ImageUtil depends on MatrixUtil's Matrix initializers for the low level representations of images.
-
-#### [CUDAImageUtil]
-The CUDA implementation of the ImageUtil.
-
-CUDAImageUtil uses the [Nvidia Performance Primitives] library to perform common arithmetic, geometric and statistical operations on  Images that are not already supported by the underlying MatrixUtil.
-
-## [IOUtil]
-The I/O Utility handles file management e.g. loading images.
-
-Currently suppported image formats: JPEG, PNG, BMP, ICO.
-
-## [DrawUtil]
-The Draw Utility uses [GTK+] v2 to display images and draw elements like keypoints on top of them.
-
-# Generators
-
-# Operators
+A collection of math utilities , data structures, and computer vision methods and all implemented in C and accelerated with [CUDA v8.0].
 
 # Example
 ```C
+  #include <utils/ImageUtil.h>
+  #include <generators/Filters.h>
+
   int gw = 8; // Width of Gaussian Kernels
   int g1s = 5; // Sigma of Gaussian Kernel 1
   int g2s = 3; // Sigma of Gaussian Kernel 2

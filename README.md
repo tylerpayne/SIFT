@@ -1,26 +1,41 @@
-# computervision 
+# computervision
 ####(UNDER DEVELOPMENT)
 
 A collection of computer vision, data structures, and math utilities all implemented in C and accelerated with [CUDA v8.0].
 
-# Design Notes
-This library is designed with an object oriented architecture. This design avoids cryptic function names and abstracts all the computer vision specific methods away from the math and image utilities. Thus the library is platform-agnostic; everything in the library refers to compiled versions of the MatrixUtil and ImageUtil, which can be built for any platform (i.e. CUDA, OpenCL, Metal, etc.).
+# Data Structures
 
-A minor annoyance of using this design in the C language is the need to pass a `self` argument to functions. 
-(e.g. `imutil->convolve(imutil,image,kernel)`)
+## [Core]
 
-# Core Components:
+## [Matrix]
+
+## [Image]
+
+## [ListNode]
+
+## [List]
+
+## [Keypoint]
+
+## [TreeNode]
+
+## [BinaryTreeNode]
+
+## [BinarySearchTree]
+
+## [Heap]
+
+## [PriorityQ]
+
+## [KDTree]
+
+# Utils
 
 ## [MatrixUtil]
 The abstract definition of the MatrixUtil class, allowing concrete implementations for different platforms (i.e. CUDA, Metal)
-#### [PrimitiveMatrixUtil]
-A plain-C implementation of the MatrixUtil.
 
 #### [CUDAMatrixUtil]
 The [CUBLAS] and [CUSOLVER] implementation of the MatrixUtil.
-
-#### TODO: MetalMatrixUtil
-For now, see my other repo [MetalUnity].
 
 ## [ImageUtil]
 The abstract definition of the ImageUtil class, allowing concrete implementations for different platforms (i.e. CUDA, Metal). ImageUtil depends on MatrixUtil's Matrix initializers for the low level representations of images.
@@ -32,21 +47,15 @@ CUDAImageUtil uses the [Nvidia Performance Primitives] library to perform common
 
 ## [IOUtil]
 The I/O Utility handles file management e.g. loading images.
- 
+
 Currently suppported image formats: JPEG, PNG, BMP, ICO.
- 
+
 ## [DrawUtil]
 The Draw Utility uses [GTK+] v2 to display images and draw elements like keypoints on top of them.
 
-# Data Structures
+# Generators
 
-# Computer Vision Components
-
-## [Filters]
-
-## [Extractor]
-
-## [Matcher]
+# Operators
 
 # Example
 ```C

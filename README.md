@@ -3,6 +3,8 @@
 
 A collection of math utilities , data structures, and computer vision methods all implemented in C and accelerated with [CUDA v8.0].
 
+##[Documentation]
+
 # Example
 ```C
   #include <utils/ImageUtil.h>
@@ -46,3 +48,4 @@ A collection of math utilities , data structures, and computer vision methods al
 
 [lena]:https://github.com/tylerpayne/computervision/blob/master/lena256.png
 [corners]:https://github.com/tylerpayne/computervision/blob/master/lenacorners.png
+[Documentation]:https://github.com/tylerpayne/computervision/wiki

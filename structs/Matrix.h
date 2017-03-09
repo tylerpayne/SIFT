@@ -12,25 +12,32 @@ int VERBOSITY = 0;
 typedef struct Matrix Matrix;
 
 typedef void (*voidFunc)();
-typedef float (*getMatrixElementFunc)(Matrix*, Point2);
-typedef float* (*getMatrixRegionFunc)(Matrix*, Rect);
-typedef void (*setMatrixElementFunc)(Matrix*, Point2, float);
-typedef void (*setMatrixRegionFunc)(Matrix*, Rect, float*);
-typedef void (*freeMatrixFunc)(Matrix*);
+typedef float (*mp2Func)(Matrix*, Point2);
+typedef float* (*mrectFunc)(Matrix*, Rect);
+typedef void (*mp2fFunc)(Matrix*, Point2, float);
+typedef void (*mrectpfFunc)(Matrix*, Rect, float*);
+typedef void (*mFunc)(Matrix*);
 
 struct Matrix
 {
   Shape shape;
+
   float* hostPtr;
   float* devicePtr;
-  int isHostSide;
+  BOOL isHostSide;
   int T;
+
+  mFunc toDevice;
+  mFunc toHost;
+
   voidFunc transpose;
-  getMatrixElementFunc getElement;
-  getMatrixRegionFunc getRegion;
-  setMatrixElementFunc setElement;
-  setMatrixRegionFunc setRegion;
-  freeMatrixFunc free;
+
+  mp2Func getElement;
+  mrectFunc getRegion;
+  mp2fFunc setElement;
+  mrectpfFunc setRegion;
+
+  mFunc free;
 };
 
 #endif

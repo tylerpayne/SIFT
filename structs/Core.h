@@ -79,6 +79,11 @@ typedef enum {
   BMP=3,
 } IMTYPE;
 
+typedef enum {
+  TRUE=0,
+  FALSE=1
+} BOOL;
+
 const char* IMFORMATS[] = {"jpeg","png","ico","bmp"};
 
 typedef struct {

@@ -5,14 +5,133 @@ __device__ int IDX2CKernel(int i, int j, int td)
   return (i*td)+j;
 }
 
-__global__ void PowMatrixKernel(float* A, float B, float* C, int ld, int td)
+__device__ Point2 C2IDXKernel(int c, int td)
+{
+  int row = c/td;
+  int col = c - (row*td)
+  Point2 ret = {row,col};
+  return ret;
+}
+
+__global__ void MultiplyElemWiseKernel(float* A, float* B, float* C, Shape shape)
 {
   int i = (blockIdx.x * blockDim.x) + threadIdx.x;
-  if (i < ld*td)
+  if (i < shape.width*shape.height)
   {
-    C[i] = powf(A[i],B);
+    C[i] = A[i]*B[i];
   }
 }
+
+__global__ void DivideElemWiseKernel(float* A, float* B, float* C, Shape shape)
+{
+  int i = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (i < shape.width*shape.height)
+  {
+    C[i] = A[i]/B[i];
+  }
+}
+
+
+
+__global__ void PowMatrixKernel(float* A, float b, float* C, Shape shape)
+{
+  int i = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (i < shape.width*shape.height)
+  {
+    C[i] = powf(A[i],b);
+  }
+}
+
+__global__ void AbsMatrixKernel(float* A, float* C, Shape shape)
+{
+  int i = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (i < shape.width*shape.height)
+  {
+    C[i] = fabsf(A[i]);
+  }
+}
+
+__global__ void SqrtMatrixKernel(float* A, float* C, Shape shape)
+{
+  int i = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (i < shape.width*shape.height)
+  {
+    C[i] = sqrtf(A[i]);
+  }
+}
+
+__global__ void CosMatrixKernel(float* A, float* C, Shape shape)
+{
+  int i = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (i < shape.width*shape.height)
+  {
+    C[i] = cosf(A[i]);
+  }
+}
+
+__global__ void SinMatrixKernel(float* A, float* C, Shape shape)
+{
+  int i = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (i < shape.width*shape.height)
+  {
+    C[i] = sinf(A[i]);
+  }
+}
+
+__global__ void TanMatrixKernel(float* A, float* C, Shape shape)
+{
+  int i = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (i < shape.width*shape.height)
+  {
+    C[i] = tanf(A[i]);
+  }
+}
+
+__global__ void ArccosMatrixKernel(float* A, float* C, Shape shape)
+{
+  int i = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (i < shape.width*shape.height)
+  {
+    C[i] = acosf(A[i]);
+  }
+}
+
+__global__ void ArcsinMatrixKernel(float* A, float* C, Shape shape)
+{
+  int i = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (i < shape.width*shape.height)
+  {
+    C[i] = asinf(A[i]);
+  }
+}
+
+__global__ void ArctanMatrixKernel(float* A, float* C, Shape shape)
+{
+  int i = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (i < shape.width*shape.height)
+  {
+    C[i] = atanf(A[i]);
+  }
+}
+
+__global__ void LogMatrixKernel(float* A, float* C, Shape shape)
+{
+  int i = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (i < shape.width*shape.height)
+  {
+    C[i] = logf(A[i]);
+  }
+}
+
+__global__ void ExpMatrixKernel(float* A, float* C, Shape shape)
+{
+  int i = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (i < shape.width*shape.height)
+  {
+    C[i] = expf(A[i]);
+  }
+}
+
 
 __global__ void TransposeMatrixKernel(float* A, float* C, int ld, int td)
 {

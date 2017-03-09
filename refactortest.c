@@ -3,15 +3,12 @@
 #include <structs/Keypoint.h>
 #include <generators/Filters.h>
 #include <operators/Extractor.h>
-#include <operators/Matcher.h>
 #include <utils/IOUtil.h>
 #include <utils/DrawUtil.h>
 
 int main(int argc, char const *argv[]) {
   char** gargv = argv;
   gtk_init(&argc,&gargv);
-
-  cudaDeviceReset();
 
   if (argc==2)
   {
@@ -21,113 +18,32 @@ int main(int argc, char const *argv[]) {
   MatrixUtil* matutil = GetMatrixUtil();
   ImageUtil* imutil = GetImageUtil(matutil);
   Extractor* extractor = NewExtractor(imutil);
-  Matcher* matcher = NewMatcher(imutil);
   IOUtil* ioutil = GetIOUtil(imutil);
   DrawUtil* drawutil = GetDrawUtil();
 
   Image* l_image = ioutil->loadImageFromFile(ioutil,"lena.png");
+  printf("%s\n","IMLOAD");
   Image* gauss1 = extractor->filters->makeGaussianKernel(extractor->filters,15,15);
   Image* gauss2 = extractor->filters->makeGaussianKernel(extractor->filters,15,9);
+  printf("%s\n","makegauss");
   Image* DoGKernel = extractor->imutil->subtract(extractor->imutil,gauss1,gauss2);
+  printf("%s\n","sub");
+
   gauss1->free(gauss1);
   gauss2->free(gauss2);
+  printf("%s\n","free");
+
   Image* DoGImage = extractor->imutil->convolve(extractor->imutil,l_image,DoGKernel);
+  printf("%s\n","convolve");
+
   DoGKernel->free(DoGKernel);
+  printf("%s\n","free");
+
   ImageIndexPair* corners = extractor->imutil->maxIdx(extractor->imutil,DoGImage,50);
-//  printf("Subpixel start\n");
+  printf("%s\n","maxidx");
+
   imutil->subPixelAlignImageIndexPair(imutil,corners);
-//  printf("subpixel\n");
-  /*Image* contrast = extractor->imutil->localContrast(extractor->imutil,l_image,100);
-  printf("made contrast imageage\n");
-  corners->image = contrast;
-  extractor->imutil->eliminatePointsBelowThreshold(extractor->imutil,corners,NULL);
-  /*Array* l_points = extractor->findCornerKeypoints(extractor,l_image,9,9,5,50,NULL);
-  Matrix* l_features = extractor->makeFeatureMatrixFromKeypointDescriptors(extractor,l_points);
-  Image* l_featim = imutil->newImageFromMatrix(imutil,l_features);
-  ioutil->saveImageToFile(ioutil,l_featimage,ioutil->appendNumberToFilename("test",100),PNG);
-/*
-  Image* r_image = ioutil->loadImageFromFile(ioutil,"right015.png");
-  Array* r_points = extractor->findCornerKeypoints(extractor,r_image,15,5,3,9,NULL);
-  Matrix* r_features = extractor->makeFeatureMatrixFromKeypointDescriptors(extractor,r_points);
-  Image* r_featim = imutil->newImageFromMatrix(imutil,r_features);
-  ioutil->saveImageToFile(ioutil,r_featimage,"r_featurematriximage.png",PNG);
-
-  Image* matches = matcher->findMatches(matcher,l_features,r_features,l_points,r_points);
-  ioutil->saveImageToFile(ioutil,matches,"matches.png",PNG);
-
-  int nWindowWidth = 100;
-  int radius = 50;
-  int saved = 0;
-  for (int i = 0; i < l_points->count; i++)
-  {
-    Keypoint* kp = ((Keypoint**)l_points->ptr)[i];
-    void* hasMatch = kp->get(kp,"hasMatch");
-
-    if (hasMatch != NULL)
-    {
-      if (((int*)hasMatch)[0] == 1)
-      {
-        Keypoint* rkp = (Keypoint*)(kp->get(kp,"match"));
-
-        Matrix* zPixels = matutil->newEmptyMatrix(nWindowWidth,nWindowWidth);
-        Rect size = {nWindowWidth,nWindowWidth};
-        Point2 Aidx = {max(0,(int)(kp->position[0])-radius),max(0,(int)(kp->position[1])-radius)};
-        Point2 Bidx = {0,0};
-        matutil->copy(matutil,kp->sourceImage->pixels,zPixels,size,Aidx,Bidx);
-        Image* lookPatch = imutil->newImageFromMatrix(imutil,zPixels);
-        Matrix* fPixels = matutil->newEmptyMatrix(nWindowWidth,nWindowWidth);
-        //size = {nWindowWidth,nWindowWidth};
-        Point2 r_Aidx = {max(0,(int)(rkp->position[0])-radius),max(0,(int)(rkp->position[1])-radius)};
-        Point2 r_Bidx = {0,0};
-        matutil->copy(matutil,rkp->sourceImage->pixels,fPixels,size,r_Aidx,r_Bidx);
-        Image* foundPatch = imutil->newImageFromMatrix(imutil,fPixels);
-        char* png = ".png";
-        char* s = "ls";
-        char* f = "lf";
-        char* id;
-        int offset;
-        if (saved < 10)
-        {
-          id = (char*)malloc(sizeof(char));
-          id[0] = saved + '0';
-          offset = 1;
-        } else if (saved < 100)
-        {
-          id = (char*)malloc(sizeof(char)*2);
-          id[0] = ((saved/10)%10) + '0';
-          id[1] = (saved%10) + '0';
-          offset = 2;
-        } else if (saved <1000)
-        {
-          id = (char*)malloc(sizeof(char)*3);
-          id[0] = ((saved/100)%100) + '0';
-          id[1] = (saved%100) + '0';
-          id[2] = (saved%10) + '0';
-          offset =3;
-        }
-        char* searchString = (char*)malloc(sizeof(char)*(7+offset));
-        memcpy(&searchString[0],id,sizeof(char)*offset);
-        searchString[0+offset] = s[0];
-        searchString[1+offset] = s[1];
-        memcpy(&searchString[2+offset],png,sizeof(char)*5);
-
-        char* foundString = (char*)malloc(sizeof(char)*(7+offset));
-        memcpy(&foundString[0],id,sizeof(char)*offset);
-        foundString[0+offset] = f[0];
-        foundString[1+offset] = f[1];
-        memcpy(&foundString[2+offset],png,sizeof(char)*5);
-        saved++;
-        ioutil->saveImageToFile(ioutil,lookPatch,searchString,PNG);
-        ioutil->saveImageToFile(ioutil,foundPatch,foundString,PNG);
-      }
-    }
-  }
-
-  //imutil->subPixelAlignImageIndexPair(imutil,corners);
-  //ioutil->saveImageToFile(ioutil,DoGImage,"gdklena.png",PNG);
-  */
-  //drawutil->drawKeypoints(drawutil,l_points,l_image,NULL);
-  //gtk_main();
+  printf("%s\n","subpix");
   cudaDeviceReset();
   return 0;
 }

@@ -7,7 +7,7 @@
   extern "C" {
 #endif
 
-void cudaErrCheck(cudaError_t stat)
+void cudaSafeCall(cudaError_t stat)
 {
   if (stat != cudaSuccess)
   {
@@ -15,7 +15,7 @@ void cudaErrCheck(cudaError_t stat)
   }
 }
 
-void nppCallErrCheck(NppStatus status)
+void nppSafeCall(NppStatus status)
 {
   if (status != NPP_SUCCESS)
   {
@@ -26,19 +26,9 @@ void nppCallErrCheck(NppStatus status)
 //#############
 //INIT Methods
 //############
-void syncDeviceFromHostImpl(Image* self)
-{
-  copyHostToDeviceCudaMatrix(self->pixels);
-}
-
-void syncHostFromDeviceImpl(Image* self)
-{
-  copyDeviceToHostCudaMatrix(self->pixels);
-}
 
 void freeImageImpl(Image* self)
 {
-  printf("imfree\n");
   self->pixels->free(self->pixels);
   free(self->pixbuf);
   free(self);
@@ -46,26 +36,16 @@ void freeImageImpl(Image* self)
 
 Image* newEmptyImageImpl(ImageUtil* self, Shape shape)
 {
-  if (VERBOSITY > 3)
-  {
-    printf("CREATING NEW EMPTY IMAGE\n");
-  }
   Image* im = (Image*)malloc(sizeof(Image));
   im->nChannels = 1;
   im->shape = shape;
   im->pixels=self->matutil->newEmptyMatrix(shape);
   im->free = freeImageImpl;
-  im->syncHostFromDevice = syncHostFromDeviceImpl;
-  im->syncDeviceFromHost = syncDeviceFromHostImpl;
   return im;
 }
 
 Image* newImageImpl(ImageUtil* self, float* data, Shape shape)
 {
-  if (VERBOSITY > 3)
-  {
-    printf("CREATING NEW IMAGE FROM DATA\n");
-  }
   Image* im = self->newEmptyImage(self,shape);
   free(im->pixels->hostPtr);
   im->pixels->hostPtr = data;
@@ -74,10 +54,6 @@ Image* newImageImpl(ImageUtil* self, float* data, Shape shape)
 
 Image* newImageFromMatrixImpl(ImageUtil* self, Matrix* m)
 {
-  if (VERBOSITY > 3)
-  {
-    printf("CREATING NEW IMAGE FROM MATRIX\n");
-  }
   Image* im = self->newEmptyImage(self,m->shape);
   im->pixels->free(im->pixels);
   im->pixels = m;
@@ -90,216 +66,91 @@ Image* newImageFromMatrixImpl(ImageUtil* self, Matrix* m)
 //#######
 //FILTERS
 //#######
-Image* convolveImageImpl(ImageUtil* self, Image* im, Image* kernel)
+Image* convolveImageImpl(ImageUtil* self, Image* A, Image* B, Image* C)
 {
-  Image* retval = self->newEmptyImage(self,im->shape);
+  assert(!A->pixels->isHostSide);
+  assert(!B->pixels->isHostSide);
+  assert(!C->pixels->isHostSide);
 
-  if (im->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(im->pixels);
-  }
-  if (kernel->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(kernel->pixels);
-  }
-  if (retval->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(retval->pixels);
-  }
-
-  Npp32f* pSrc = im->pixels->devicePtr;
-  int nSrcStep = im->shape.height*sizeof(float);
-  NppiSize oSrcSize = {im->shape.height,im->shape.width};
+  Npp32f* pSrc = A->pixels->devicePtr;
+  int nSrcStep = A->shape.height*sizeof(float);
+  NppiSize oSrcSize = {A->shape.height,A->shape.width};
   NppiPoint oSrcOffset = {0,0};
-  Npp32f* pDst = retval->pixels->devicePtr;
-  int nDstStep = im->shape.height*sizeof(float);
-  NppiSize oSizeROI = {im->shape.height,im->shape.width};
-  Npp32f* pKernel = kernel->pixels->devicePtr;
-  NppiSize oKernelSize = {kernel->shape.height,kernel->shape.width};
+
+  Npp32f* pDst = C->pixels->devicePtr;
+  int nDstStep = A->shape.height*sizeof(float);
+  NppiSize oSizeROI = {A->shape.height,A->shape.width};
+
+  Npp32f* pKernel = B->pixels->devicePtr;
+  NppiSize oKernelSize = {B->shape.height,B->shape.width};
   NppiPoint oAnchor = {oKernelSize.width/2,oKernelSize.height/2};
-  NppiBorderType eBorderType = NPP_BORDER_REPLICATE;
-  nppCallErrCheck(nppiFilterBorder_32f_C1R(pSrc,nSrcStep,oSrcSize,oSrcOffset,pDst,nDstStep,oSizeROI,pKernel,oKernelSize,oAnchor,eBorderType));
 
-  return retval;
+  NppiBorderType eBorderType = NPP_BORDER_REPLICATE;
+
+  nppSafeCall(nppiFilterBorder_32f_C1R(pSrc,nSrcStep,oSrcSize,oSrcOffset,
+                                      pDst,nDstStep,oSizeROI,
+                                      pKernel,oKernelSize,oAnchor,
+                                      eBorderType));
 }
 
-Image* gradientXImageImpl(ImageUtil* self, Image* im)
+void gradientsImageImpl(ImageUtil* self, Image* src, Image* dX, Image* dY, Image* mag, Image* angle)
 {
-  Image* retval = self->newEmptyImage(self,im->shape);
+  assert(!src->pixels->isHostSide);
 
-  if (im->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(im->pixels);
-  }
-  if (retval->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(retval->pixels);
-  }
-
-  Npp32f* pSrc = im->pixels->devicePtr;
-  int nSrcStep = im->shape.height*sizeof(float);
-  NppiSize oSrcSize = {im->shape.height,im->shape.width};
+  Npp32f* pSrc = src->pixels->devicePtr;
+  int nSrcStep = src->shape.height*sizeof(float);
+  NppiSize oSrcSize = {src->shape.height,src->shape.width};
   NppiPoint oSrcOffset = {0,0};
-  Npp32f* pDstX = retval->pixels->devicePtr;;
-  int nDstXStep = retval->shape.height*sizeof(float);;
+
+  Npp32f* pDstX = NULL;
   Npp32f* pDstY = NULL;
-  int nDstYStep = 0;
   Npp32f* pDstMag = NULL;
-  int nDstMagStep = 0;
   Npp32f* pDstAngle = NULL;
-  int nDstAngleStep = 0;
-  NppiSize oSizeROI = {im->shape.height,im->shape.width};
-  NppiNorm eNorm = nppiNormL2;
-  NppiMaskSize eMaskSize = NPP_MASK_SIZE_3_X_3;
-  NppiBorderType eBorderType = NPP_BORDER_REPLICATE;
-  nppCallErrCheck(nppiGradientVectorSobelBorder_32f_C1R(pSrc,nSrcStep,oSrcSize,oSrcOffset,pDstX,nDstXStep,pDstY,nDstYStep,pDstMag,nDstMagStep,pDstAngle,nDstAngleStep,oSizeROI,eMaskSize,eNorm,eBorderType));
 
-  return retval;
-}
-
-Image* gradientYImageImpl(ImageUtil* self, Image* im)
-{
-  Image* retval = self->newEmptyImage(self,im->shape);
-
-  if (im->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(im->pixels);
-  }
-  if (retval->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(retval->pixels);
-  }
-
-  Npp32f* pSrc = im->pixels->devicePtr;
-  int nSrcStep = im->shape.height*sizeof(float);
-  NppiSize oSrcSize = {im->shape.height,im->shape.width};
-  NppiPoint oSrcOffset = {0,0};
-  Npp32f* pDstX = NULL;
   int nDstXStep = 0;
-  Npp32f* pDstY = retval->pixels->devicePtr;;
-  int nDstYStep = retval->shape.height*sizeof(float);
-  Npp32f* pDstMag = NULL;
+  int nDstYStep = 0;
   int nDstMagStep = 0;
-  Npp32f* pDstAngle = NULL;
   int nDstAngleStep = 0;
-  NppiSize oSizeROI = {im->shape.height,im->shape.width};
+
+  if (dX != NULL)
+  {
+    assert(!dX->pixels->isHostSide);
+    pDstX = dX->pixels->devicePtr;
+    nDstXStep = nSrcStep;
+  }
+
+  if (dY != NULL)
+  {
+    assert(!dY->pixels->isHostSide);
+    pDstY = dY->pixels->devicePtr;
+    nDstYStep = nSrcStep;
+  }
+
+  if (mag != NULL)
+  {
+    assert(!mag->pixels->isHostSide);
+    pDstMag = mag->pixels->devicePtr;
+    nDstMagStep = nSrcStep;
+  }
+
+  if (angle != NULL)
+  {
+    assert(!angle->pixels->isHostSide);
+    pDstAngle = angle->pixels->devicePtr;
+    nDstAngleStep = nSrcStep;
+  }
+
+  NppiSize oSizeROI = {src->shape.height,src->shape.width};
   NppiNorm eNorm = nppiNormL2;
   NppiMaskSize eMaskSize = NPP_MASK_SIZE_3_X_3;
   NppiBorderType eBorderType = NPP_BORDER_REPLICATE;
-  nppCallErrCheck(nppiGradientVectorSobelBorder_32f_C1R(pSrc,nSrcStep,oSrcSize,oSrcOffset,pDstX,nDstXStep,pDstY,nDstYStep,pDstMag,nDstMagStep,pDstAngle,nDstAngleStep,oSizeROI,eMaskSize,eNorm,eBorderType));
 
-  return retval;
-}
-
-Image* gradientMagnitudeImageImpl(ImageUtil* self, Image* im)
-{
-  Image* retval = self->newEmptyImage(self,im->shape);
-
-  if (im->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(im->pixels);
-  }
-  if (retval->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(retval->pixels);
-  }
-
-  Npp32f* pSrc = im->pixels->devicePtr;
-  int nSrcStep = im->shape.height*sizeof(float);
-  NppiSize oSrcSize = {im->shape.height,im->shape.width};
-  NppiPoint oSrcOffset = {0,0};
-  Npp32f* pDstX = NULL;
-  int nDstXStep = 0;
-  Npp32f* pDstY = NULL;
-  int nDstYStep = 0;
-  Npp32f* pDstMag = retval->pixels->devicePtr;
-  int nDstMagStep = retval->shape.height*sizeof(float);
-  Npp32f* pDstAngle = NULL;
-  int nDstAngleStep = 0;
-  NppiSize oSizeROI = {im->shape.height,im->shape.width};
-  NppiNorm eNorm = nppiNormL2;
-  NppiMaskSize eMaskSize = NPP_MASK_SIZE_3_X_3;
-  NppiBorderType eBorderType = NPP_BORDER_REPLICATE;
-  //nppSetStream(self->matutil->stream);
-  nppCallErrCheck(nppiGradientVectorSobelBorder_32f_C1R(pSrc,nSrcStep,oSrcSize,oSrcOffset,pDstX,nDstXStep,pDstY,nDstYStep,pDstMag,nDstMagStep,pDstAngle,nDstAngleStep,oSizeROI,eMaskSize,eNorm,eBorderType));
-
-  return retval;
-}
-
-Image* gradientAngleImageImpl(ImageUtil* self, Image* im)
-{
-  Image* retval = self->newEmptyImage(self,im->shape);
-
-  if (im->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(im->pixels);
-  }
-  if (retval->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(retval->pixels);
-  }
-
-  Npp32f* pSrc = im->pixels->devicePtr;
-  int nSrcStep = im->shape.height*sizeof(float);
-  NppiSize oSrcSize = {im->shape.height,im->shape.width};
-  NppiPoint oSrcOffset = {0,0};
-  Npp32f* pDstX = NULL;
-  int nDstXStep = 0;
-  Npp32f* pDstY = NULL;
-  int nDstYStep = 0;
-  Npp32f* pDstMag = NULL;
-  int nDstMagStep = 0;
-  Npp32f* pDstAngle = retval->pixels->devicePtr;
-  int nDstAngleStep = retval->shape.height*sizeof(float);
-  NppiSize oSizeROI = {im->shape.height,im->shape.width};
-  NppiNorm eNorm = nppiNormL2;
-  NppiMaskSize eMaskSize = NPP_MASK_SIZE_3_X_3;
-  NppiBorderType eBorderType = NPP_BORDER_REPLICATE;
-  nppCallErrCheck(nppiGradientVectorSobelBorder_32f_C1R(pSrc,nSrcStep,oSrcSize,oSrcOffset,pDstX,nDstXStep,pDstY,nDstYStep,pDstMag,nDstMagStep,pDstAngle,nDstAngleStep,oSizeROI,eMaskSize,eNorm,eBorderType));
-
-  return retval;
-}
-
-ImageGradientVectorPair* gradientsImageImpl(ImageUtil* self, Image* im)
-{
-  Image* magnitude = self->newEmptyImage(self,im->shape);
-  Image* angle = self->newEmptyImage(self,im->shape);
-
-  if (im->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(im->pixels);
-  }
-  if (magnitude->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(magnitude->pixels);
-  }
-  if (angle->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(angle->pixels);
-  }
-
-  ImageGradientVectorPair* retval = (ImageGradientVectorPair*)malloc(sizeof(ImageGradientVectorPair));
-  retval->magnitude = magnitude;
-  retval->angle = angle;
-  Npp32f* pSrc = im->pixels->devicePtr;
-  int nSrcStep = im->shape.height*sizeof(float);
-  NppiSize oSrcSize = {im->shape.height,im->shape.width};
-  NppiPoint oSrcOffset = {0,0};
-  Npp32f* pDstX = NULL;
-  int nDstXStep = 0;
-  Npp32f* pDstY = NULL;
-  int nDstYStep = 0;
-  Npp32f* pDstMag = magnitude->pixels->devicePtr;
-  int nDstMagStep = magnitude->shape.height*sizeof(float);
-  Npp32f* pDstAngle = angle->pixels->devicePtr;
-  int nDstAngleStep = angle->shape.height*sizeof(float);
-  NppiSize oSizeROI = {im->shape.height,im->shape.width};
-  NppiNorm eNorm = nppiNormL2;
-  NppiMaskSize eMaskSize = NPP_MASK_SIZE_3_X_3;
-  NppiBorderType eBorderType = NPP_BORDER_REPLICATE;
-  nppCallErrCheck(nppiGradientVectorSobelBorder_32f_C1R(pSrc,nSrcStep,oSrcSize,oSrcOffset,pDstX,nDstXStep,pDstY,nDstYStep,pDstMag,nDstMagStep,pDstAngle,nDstAngleStep,oSizeROI,eMaskSize,eNorm,eBorderType));
-
-  return retval;
+  nppSafeCall(nppiGradientVectorSobelBorder_32f_C1R(pSrc,nSrcStep,oSrcSize,oSrcOffset,
+                                                    pDstX,nDstXStep,
+                                                    pDstY,nDstYStep,
+                                                    pDstMag,nDstMagStep,
+                                                    pDstAngle,nDstAngleStep,
+                                                    oSizeROI,eMaskSize,eNorm,eBorderType));
 }
 //############
 //END FILTERS
@@ -308,34 +159,31 @@ ImageGradientVectorPair* gradientsImageImpl(ImageUtil* self, Image* im)
 //#########
 //GEOMETRY
 //########
-Image* resampleImageImpl(ImageUtil* self, Image* im, Shape shape)
+void resampleImageImpl(ImageUtil* self, Image* A, Shape shape, Image* C)
 {
-  Image* retval = self->newEmptyImage(self,shape);
+  assert(!A->pixels->isHostSide);
+  assert(!C->pixels->isHostSide);
 
-  if (im->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(im->pixels);
-  }
-  if (retval->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(retval->pixels);
-  }
+  Npp32f* pSrc = A->pixels->devicePtr;
+  int nSrcStep = A->shape.height*sizeof(float);
+  NppiSize oSrcSize = {A->shape.height,A->shape.width};
+  NppiRect oSrcROI = {0,0,A->shape.height,A->shape.width};
 
-  Npp32f* pSrc = im->pixels->devicePtr;
-  int nSrcStep = im->shape.height*sizeof(float);
-  NppiSize oSrcSize = {im->shape.height,im->shape.width};
-  NppiRect oSrcROI = {0,0,im->shape.height,im->shape.width};
-  Npp32f* pDst = retval->pixels->devicePtr;
-  int nDstStep = retval->shape.height*sizeof(float);
-  NppiRect oDstROI = {0,0,retval->shape.height,retval->shape.width};
-  double nXFactor = ((float)shape.width)/((float)im->shape.height);
-  double nYFactor = ((float)shape.height)/((float)im->shape.width);
+  Npp32f* pDst = C->pixels->devicePtr;
+  int nDstStep = C->shape.height*sizeof(float);
+  NppiRect oDstROI = {0,0,C->shape.height,C->shape.width};
+
+  double nXFactor = ((float)shape.width)/((float)A->shape.height);
+  double nYFactor = ((float)shape.height)/((float)A->shape.width);
   double nXShift = 0;
   double nYShift = 0;
   NppiInterpolationMode eInterpolation = NPPI_INTER_CUBIC;
-  nppCallErrCheck(nppiResizeSqrPixel_32f_C1R(pSrc,oSrcSize,nSrcStep,oSrcROI,pDst,nDstStep,oDstROI,nXFactor,nYFactor,nXShift,nYShift,eInterpolation));
 
-  return retval;
+  nppSafeCall(nppiResizeSqrPixel_32f_C1R(pSrc,oSrcSize,nSrcStep,oSrcROI,
+                                        pDst,nDstStep,oDstROI,
+                                        nXFactor,nYFactor,
+                                        nXShift,nYShift,
+                                        eInterpolation));
 }
 //#############
 //END GEOMETRY
@@ -344,116 +192,44 @@ Image* resampleImageImpl(ImageUtil* self, Image* im, Shape shape)
 //##########
 //ARITHMETIC
 //##########
-Image* addImageImpl(ImageUtil* self, Image* im1, Image*im2)
+void addImageImpl(ImageUtil* self, Image* A, Image* B, Image* C)
 {
-  Image* retval = self->newEmptyImage(self,im1->shape);
-
-  if (im1->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(im1->pixels);
-  }
-  if (im2->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(im2->pixels);
-  }
-  if (retval->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(retval->pixels);
-  }
-
-  Npp32f* pSrc1 = im1->pixels->devicePtr;
-  int nSrc1Step = im1->shape.height*sizeof(float);
-  Npp32f* pSrc2 = im2->pixels->devicePtr;
-  int nSrc2Step = im2->shape.height*sizeof(float);
-  Npp32f* pDst = retval->pixels->devicePtr;
-  int nDstStep = retval->shape.height*sizeof(float);
-  NppiSize oSizeROI = {im1->shape.height,im1->shape.width};
-  nppCallErrCheck(nppiAdd_32f_C1R(pSrc1,nSrc1Step,pSrc2,nSrc2Step,pDst,nDstStep,oSizeROI));
-
-  return retval;
+  self->matutil->add(A->pixels,B->pixels,C->pixels);
 }
 
-Image* subtractImageImpl(ImageUtil* self, Image* im1, Image*im2)
+void addfImageImpl(ImageUtil* self, Image* A, float b, Image* C)
 {
-  Image* retval = self->newEmptyImage(self,im1->shape);
-
-  if (im1->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(im1->pixels);
-  }
-  if (im2->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(im2->pixels);
-  }
-  if (retval->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(retval->pixels);
-  }
-
-  Npp32f* pSrc1 = (Npp32f*)(im1->pixels->devicePtr);
-  int nSrc1Step = im1->shape.height*sizeof(float);
-  Npp32f* pSrc2 = im2->pixels->devicePtr;
-  int nSrc2Step = im2->shape.height*sizeof(float);
-  Npp32f* pDst = retval->pixels->devicePtr;
-  int nDstStep = retval->shape.height*sizeof(float);
-  NppiSize oSizeROI = {im1->shape.height,im1->shape.width};
-  nppCallErrCheck(nppiSub_32f_C1R(pSrc1,nSrc1Step,pSrc2,nSrc2Step,pDst,nDstStep,oSizeROI));
-
-  return retval;
+  self->matutil->addf(A->pixels,b,C->pixels);
 }
 
-Image* multiplyCImageImpl(ImageUtil* self, Image* im, float val)
+void subtractImageImpl(ImageUtil* self, Image* A, Image* B, Image* C)
 {
-  Image* retval = self->newEmptyImage(self,im->shape);
-
-  if (im->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(im->pixels);
-  }
-  if (retval->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(retval->pixels);
-  }
-
-  float* pSrc1 = im->pixels->devicePtr;
-  int nSrc1Step = im->shape.height*sizeof(float);
-  float nConstant = val;
-  float* pDst = retval->pixels->devicePtr;
-  int nDstStep = retval->shape.height*sizeof(float);
-  NppiSize oSizeROI = {im->shape.height,im->shape.width};
-  nppCallErrCheck(nppiMulC_32f_C1R(pSrc1,nSrc1Step,nConstant,pDst,nDstStep,oSizeROI));
-
-  return retval;
+  self->matutil->subtract(A->pixels,B->pixels,C->pixels);
 }
 
-Image* multiplyImageImpl(ImageUtil* self, Image* im1, Image* im2)
+void subtractfImageImpl(ImageUtil* self, Image* A, float b, Image* C)
 {
-  Image* retval = self->newEmptyImage(self,im1->shape);
+  self->matutil->subtractf(A->pixels,b,C->pixels);
+}
 
-  if (im1->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(im1->pixels);
-  }
-  if (im2->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(im2->pixels);
-  }
-  if (retval->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(retval->pixels);
-  }
+void multiplyImageImpl(ImageUtil* self, Image* A, Image* B, Image* C)
+{
+  self->matutil->multiply(A->pixels,B->pixels,C->pixels);
+}
 
+void multiplyfImageImpl(ImageUtil* self, Image* A, float b, Image* C)
+{
+  self->matutil->multiplyf(A->pixels,b,C->pixels);
+}
 
-  float* pSrc1 = im1->pixels->devicePtr;
-  int nSrc1Step = im1->shape.height*sizeof(float);
-  float* pSrc2 = im2->pixels->devicePtr;
-  int nSrc2Step = im2->shape.height*sizeof(float);
-  float* pDst = retval->pixels->devicePtr;
-  int nDstStep = retval->shape.height*sizeof(float);
-  NppiSize oSizeROI = {im1->shape.height,im1->shape.width};
-  nppCallErrCheck(nppiMul_32f_C1R(pSrc1,nSrc1Step,pSrc2,nSrc2Step,pDst,nDstStep,oSizeROI));
+void divideImageImpl(ImageUtil* self, Image* A, Image* B, Image* C)
+{
+  self->matutil->divide(A->pixels,B->pixels,C->pixels);
+}
 
-  return retval;
+void dividefImageImpl(ImageUtil* self, Image* A, float b, Image* C)
+{
+  self->matutil->dividef(A->pixels,b,C->pixels);
 }
 //###############
 //END ARITHMETIC
@@ -462,93 +238,55 @@ Image* multiplyImageImpl(ImageUtil* self, Image* im1, Image* im2)
 //##########
 //STATISTICS
 //##########
-Image* maxImageImpl(ImageUtil* self, Image* im, int radius)
+void maxImageImpl(ImageUtil* self, Image* A, int r, Image* C)
 {
-  Image* retval = self->newEmptyImage(self,im->shape);
-  if (im->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(im->pixels);
-  }
-  if (retval->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(retval->pixels);
-  }
+  assert(!A->pixels->isHostSide);
+  assert(!C->pixels->isHostSide);
 
-  int wregions = im->shape.height/radius;
-  int hregions = im->shape.width/radius;
-  float* pSrc = im->pixels->devicePtr;
-  float* pDst = retval->pixels->devicePtr;
-  NppiSize oSize = {im->shape.height,im->shape.width};
+  int wregions = A->shape.height/r;
+  int hregions = A->shape.width/r;
+  float* pSrc = A->pixels->devicePtr;
+  float* pDst = C->pixels->devicePtr;
 
-  int bdimX = fmin(32,wregions);
-  int bdimY = fmin(32,hregions);
+  int bdimX = fmin(sqrt(THREADS_PER_BLOCK),wregions);
+  int bdimY = fmin(sqrt(THREADS_PER_BLOCK),hregions);
   dim3 bdim(bdimX,bdimY);
   dim3 gdim(wregions/bdimX + 1,hregions/bdimY + 1);
-  LocalMaxKernel<<<gdim,bdim>>>(pSrc,pDst,oSize,radius);
-
-  return retval;
+  LocalMaxKernel<<<gdim,bdim,0,_stream>>>(pSrc,pDst,A->shape,r);
 }
 
-ImageIndexPair* maxIdxImageImpl(ImageUtil* self, Image* im, int radius)
+void argmaxImageImpl(ImageUtil* self, Image* A, int r, Point2** pMax)
 {
-  Image* dst = self->newEmptyImage(self,im->shape);
-  if (im->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(im->pixels);
-  }
-  if (dst->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(dst->pixels);
-  }
-  int wregions = im->shape.height/radius;
-  int hregions = im->shape.width/radius;
-  Npp32f* pSrc = im->pixels->devicePtr;
-  Npp32f* pDst = dst->pixels->devicePtr;
-  int* pIdx;
-  size_t indexSize = sizeof(int)*(wregions*hregions);
-  cudaErrCheck(cudaMalloc(&pIdx,indexSize));
-  NppiSize oSize = {im->shape.height,im->shape.width};
+  assert(!A->pixels->isHostSide);
 
-  int bdimX = fmin(32,wregions);
-  int bdimY = fmin(32,hregions);
+  int wregions = A->shape.height/r;
+  int hregions = A->shape.width/r;
+  float* pSrc = A->pixels->devicePtr;
+
+  cudaSafeCall(cudaMalloc(pMax,sizeof(Point2)*wregions*hregions));
+
+  int bdimX = fmin(sqrt(THREADS_PER_BLOCK),wregions);
+  int bdimY = fmin(sqrt(THREADS_PER_BLOCK),hregions);
   dim3 bdim(bdimX,bdimY);
   dim3 gdim(wregions/bdimX + 1,hregions/bdimY + 1);
-  LocalMaxIdxKernel<<<gdim,bdim>>>(pSrc,pDst,pIdx,oSize,radius);
-  ImageIndexPair* retval = (ImageIndexPair*)malloc(sizeof(ImageIndexPair));
-  retval->image=im;
-  retval->index=pIdx;
-  retval->count=wregions*hregions;
-  retval->subPixelX = NULL;
-  retval->subPixelY = NULL;
-  return retval;
+  LocalArgMaxKernel<<<gdim,bdim,0,_stream>>>(pSrc,(*pMax),A->shape,r);
 }
 
-Image* localContrastImageImpl(ImageUtil* self, Image* im, int radius)
+void localContrastImageImpl(ImageUtil* self, Image* A, int radius, Image* C)
 {
-  Image* retval = self->newEmptyImage(self,im->shape);
+  assert(!A->pixels->isHostSide);
+  assert(!C->pixels->isHostSide);
 
-  if (im->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(im->pixels);
-  }
-  if (retval->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(retval->pixels);
-  }
+  int wregions = A->shape.height/r;
+  int hregions = A->shape.width/r;
+  float* pSrc = A->pixels->devicePtr;
+  float* pDst = C->pixels->devicePtr;
 
-  int wregions = im->shape.height/radius;
-  int hregions = im->shape.width/radius;
-  float* pSrc = im->pixels->devicePtr;
-  float* pDst = retval->pixels->devicePtr;
-  NppiSize oSize = {im->shape.height,im->shape.width};
-
-  int bdimX = fmin(32,wregions);
-  int bdimY = fmin(32,hregions);
+  int bdimX = fmin(sqrt(THREADS_PER_BLOCK),wregions);
+  int bdimY = fmin(sqrt(THREADS_PER_BLOCK),hregions);
   dim3 bdim(bdimX,bdimY);
   dim3 gdim(wregions/bdimX + 1,hregions/bdimY + 1);
-  LocalContrastKernel<<<gdim,bdim>>>(pSrc,pDst,oSize,radius);
-
-  return retval;
+  LocalContrastKernel<<<gdim,bdim,0,_stream>>>(pSrc,pDst,A->shape,r);
 }
 //##############
 //END STATISTICS
@@ -557,48 +295,31 @@ Image* localContrastImageImpl(ImageUtil* self, Image* im, int radius)
 //######################
 // BEGIN COMPUTERVISION
 //######################
-
-void subPixelAlignImageIndexPairImpl(ImageUtil* self, ImageIndexPair* data)
+void subPixelRefineImageImpl(ImageUtil* self, Image* A, Point2* pMax, Point2f** pSubPixel)
 {
-  if (data->image->pixels->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(data->image->pixels);
-  }
-  printf("1\n");
+  assert(!A->pixels->isHostSide);
+
   Image* Ix = self->gradientX(self,data->image);
   Image* Iy = self->gradientY(self,data->image);
   Image* Ixx = self->gradientX(self,Ix);
   Image* Ixy = self->gradientY(self,Ix);
   Image* Iyy = self->gradientY(self,Iy);
-  printf("2\n");
 
-  int* pIdx = data->index;
-  float* pSubPixelX;
-  float* pSubPixelY;
-  NppiSize oSize = {Ix->shape.height,Ix->shape.width};
-  printf("3\n");
+  Shape oSize = {Ix->shape.height,Ix->shape.width};
 
-  size_t size = sizeof(float)*(data->count);
-  cudaErrCheck(cudaMalloc(&pSubPixelX,size));
-  cudaErrCheck(cudaMalloc(&pSubPixelY,size));
-  printf("4\n");
+  size_t size = sizeof(Point2f)*(data->count);
+  cudaSafeCall(cudaMalloc(pSubPixel,size));
 
-  int bdimX = min(1024,data->count);
+  int bdimX = min(THREADS_PER_BLOCK,data->count);
   dim3 bdim(bdimX);
   dim3 gdim((data->count/bdimX) + 1);
-  printf("5\n");
-  SubPixelAlignKernel<<<gdim,bdim>>>(Ix->pixels->devicePtr,Iy->pixels->devicePtr,Ixx->pixels->devicePtr,Ixy->pixels->devicePtr,Iyy->pixels->devicePtr,pIdx,pSubPixelX,pSubPixelY,oSize,data->count);
+  SubPixelAlignKernel<<<gdim,bdim,0,_stream>>>(Ix->pixels->devicePtr,Iy->pixels->devicePtr,Ixx->pixels->devicePtr,Ixy->pixels->devicePtr,Iyy->pixels->devicePtr,pIdx,*pSubPixel,oSize,data->count);
+
   Ix->free(Ix);
   Iy->free(Iy);
   Ixx->free(Ixx);
   Ixy->free(Ixy);
   Iyy->free(Iyy);
-  printf("6\n");
-  data->subPixelX = (float*)malloc(size);
-  data->subPixelY = (float*)malloc(size);
-  cudaErrCheck(cudaMemcpy(data->subPixelX,pSubPixelX,size,cudaMemcpyDeviceToHost));
-  cudaErrCheck(cudaMemcpy(data->subPixelY,pSubPixelY,size,cudaMemcpyDeviceToHost));
-  printf("7\n");
 }
 
 void eliminatePointsBelowThresholdImpl(ImageUtil* self, ImageIndexPair* keypoints, float* threshold)
@@ -614,14 +335,12 @@ void eliminatePointsBelowThresholdImpl(ImageUtil* self, ImageIndexPair* keypoint
   printf("1\n");
   int* d_keepCount;
   int* d_keepIndex;
-  float* d_keepSubPixelX;
-  float* d_keepSubPixelY;
+  Point2f* d_keepSubPixel;
 
-  cudaErrCheck(cudaMalloc(&d_keepIndex,sizeof(int)*keypoints->count));
-  cudaErrCheck(cudaMalloc(&d_keepSubPixelX,sizeof(float)*keypoints->count));
-  cudaErrCheck(cudaMalloc(&d_keepSubPixelY,sizeof(float)*keypoints->count));
-  cudaErrCheck(cudaMalloc(&d_keepCount,sizeof(int)));
-  cudaErrCheck(cudaMemset(d_keepCount,0,sizeof(int)));
+  cudaSafeCall(cudaMalloc(&d_keepIndex,sizeof(int)*keypoints->count));
+  cudaSafeCall(cudaMalloc(&d_keepSubPixel,sizeof(Point2f)*keypoints->count));
+  cudaSafeCall(cudaMalloc(&d_keepCount,sizeof(int)));
+  cudaSafeCall(cudaMemset(d_keepCount,0,sizeof(int)));
   printf("2\n");
 
   NppiSize oSize = {keypoints->image->shape.height,keypoints->image->shape.width};
@@ -637,23 +356,21 @@ void eliminatePointsBelowThresholdImpl(ImageUtil* self, ImageIndexPair* keypoint
   printf("bdim: (%i,%i) gdim: (%i,%i) N: %i\n",bdim.x,bdim.y,gdim.x,gdim.y,keypoints->count);
   printf("imshape: (%i,%i)\n",keypoints->image->shape.height,keypoints->image->shape.width);
   printf("isNull: %i\n",keypoints->index==NULL);
-  EliminatePointsBelowThresholdKernel<<<gdim,bdim,sizeof(int)*keypoints->count+1>>>(keypoints->image->pixels->devicePtr,oSize,keypoints->subPixelX,keypoints->subPixelY,keypoints->index,keypoints->count,d_keepSubPixelX,d_keepSubPixelY,d_keepIndex,d_keepCount,thresh);
+  EliminatePointsBelowThresholdKernel<<<gdim,bdim,sizeof(int)*keypoints->count+1>>>(keypoints->image->pixels->devicePtr,oSize,keypoints->subPixel,keypoints->index,keypoints->count,d_keepSubPixel,d_keepIndex,d_keepCount,thresh);
   cudaDeviceSynchronize();
-  cudaErrCheck(cudaGetLastError());
+  cudaSafeCall(cudaGetLastError());
   printf("3\n");
   int* h_keepCount = (int*)malloc(sizeof(int));
-  cudaErrCheck(cudaMemcpy(h_keepCount,d_keepCount,sizeof(int),cudaMemcpyDeviceToHost));
+  cudaSafeCall(cudaMemcpy(h_keepCount,d_keepCount,sizeof(int),cudaMemcpyDeviceToHost));
   int keepCount = *h_keepCount;
   printf("h_keepCount = %i\n",keepCount);
-  cudaErrCheck(cudaFree(&d_keepIndex[keepCount]));
-  cudaErrCheck(cudaFree(&d_keepSubPixelX[keepCount]));
-  cudaErrCheck(cudaFree(&d_keepSubPixelY[keepCount]));
+  cudaSafeCall(cudaFree(&d_keepIndex[keepCount]));
+  cudaSafeCall(cudaFree(&d_keepSubPixel[keepCount]));
   printf("4\n");
 
   keypoints->count = keepCount;
   keypoints->index = d_keepIndex;
-  keypoints->subPixelX = d_keepSubPixelX;
-  keypoints->subPixelY = d_keepSubPixelY;
+  keypoints->subPixel = d_keepSubPixel;
 }
 
 void eliminateEdgePointsImpl(ImageUtil* self, ImageIndexPair* keypoints, float* threshold)
@@ -671,12 +388,10 @@ void eliminateEdgePointsImpl(ImageUtil* self, ImageIndexPair* keypoints, float* 
 
   int* d_keepCount;
   int* d_keepIndex;
-  float* d_keepSubPixelX;
-  float* d_keepSubPixelY;
-  cudaErrCheck(cudaMalloc(&d_keepCount,sizeof(int)));
-  cudaErrCheck(cudaMalloc(&d_keepIndex,sizeof(int)*keypoints->count));
-  cudaErrCheck(cudaMalloc(&d_keepSubPixelX,sizeof(float)*keypoints->count));
-  cudaErrCheck(cudaMalloc(&d_keepSubPixelY,sizeof(float)*keypoints->count));
+  Point2f* d_keepSubPixel;
+  cudaSafeCall(cudaMalloc(&d_keepCount,sizeof(int)));
+  cudaSafeCall(cudaMalloc(&d_keepIndex,sizeof(int)*keypoints->count));
+  cudaSafeCall(cudaMalloc(&d_keepSubPixel,sizeof(Point2f)*keypoints->count));
 
   NppiSize oSize = {keypoints->image->shape.height,keypoints->image->shape.width};
 
@@ -699,20 +414,18 @@ void eliminateEdgePointsImpl(ImageUtil* self, ImageIndexPair* keypoints, float* 
 
   dim3 bdim(blockDimX);
   dim3 gdim(keypoints->count/blockDimX + 1);
-  EliminateEdgePointsKernel<<<gdim,bdim>>>(keypoints->image->pixels->devicePtr,oSize,keypoints->subPixelX,keypoints->subPixelY,keypoints->index,keypoints->count,Ix->pixels->devicePtr,Iy->pixels->devicePtr,d_keepSubPixelX,d_keepSubPixelY,d_keepIndex,d_keepCount,thresh);
+  EliminateEdgePointsKernel<<<gdim,bdim>>>(keypoints->image->pixels->devicePtr,oSize,keypoints->subPixel,keypoints->index,keypoints->count,Ix->pixels->devicePtr,Iy->pixels->devicePtr,d_keepSubPixel,d_keepIndex,d_keepCount,thresh);
   Ix->free(Ix);
   Iy->free(Iy);
   int* h_keepCount = (int*)malloc(sizeof(int));
-  cudaErrCheck(cudaMemcpy(h_keepCount,d_keepCount,sizeof(int),cudaMemcpyDeviceToHost));
+  cudaSafeCall(cudaMemcpy(h_keepCount,d_keepCount,sizeof(int),cudaMemcpyDeviceToHost));
   int keepCount = h_keepCount[0];
-  cudaErrCheck(cudaFree(&d_keepIndex[keepCount]));
-  cudaErrCheck(cudaFree(&d_keepSubPixelX[keepCount]));
-  cudaErrCheck(cudaFree(&d_keepSubPixelY[keepCount]));
+  cudaSafeCall(cudaFree(&d_keepIndex[keepCount]));
+  cudaSafeCall(cudaFree(&d_keepSubPixel[keepCount]));
 
   keypoints->count = keepCount;
   keypoints->index = d_keepIndex;
-  keypoints->subPixelX = d_keepSubPixelX;
-  keypoints->subPixelY = d_keepSubPixelY;
+  keypoints->subPixel = d_keepSubPixel;
 }
 
 
@@ -721,11 +434,10 @@ Matrix** makeFeatureDescriptorsForImageIndexPairImpl(ImageUtil* self, ImageIndex
   float* d_features;
   float* d_subPixelX;
   float* d_subPixelY;
-  cudaErrCheck(cudaMalloc(&d_features,sizeof(float)*featureWidth*featureWidth*keypoints->count));
-  cudaErrCheck(cudaMalloc(&d_subPixelY,sizeof(float)*keypoints->count));
-  cudaErrCheck(cudaMalloc(&d_subPixelX,sizeof(float)*keypoints->count));
-  cudaMemcpy(d_subPixelX,keypoints->subPixelX,sizeof(float)*keypoints->count,cudaMemcpyHostToDevice);
-  cudaMemcpy(d_subPixelY,keypoints->subPixelY,sizeof(float)*keypoints->count,cudaMemcpyHostToDevice);
+  cudaSafeCall(cudaMalloc(&d_features,sizeof(float)*featureWidth*featureWidth*keypoints->count));
+  cudaSafeCall(cudaMalloc(&d_subPixelY,sizeof(float)*keypoints->count));
+  cudaSafeCall(cudaMalloc(&d_subPixelX,sizeof(float)*keypoints->count));
+  cudaMemcpy(d_subPixelX,keypoints->subPixel,sizeof(Point2f)*keypoints->count,cudaMemcpyHostToDevice);
 
   NppiSize oSize = {im->shape.height,im->shape.width};
 
@@ -737,14 +449,14 @@ Matrix** makeFeatureDescriptorsForImageIndexPairImpl(ImageUtil* self, ImageIndex
   for (int i = 0; i < keypoints->count; i++)
   {
     float* h_feature = (float*)malloc(sizeof(float)*featureWidth*featureWidth);
-    cudaErrCheck(cudaMemcpy(h_feature,&d_features[i*featureWidth*featureWidth],sizeof(float)*featureWidth*featureWidth,cudaMemcpyDeviceToHost));
+    cudaSafeCall(cudaMemcpy(h_feature,&d_features[i*featureWidth*featureWidth],sizeof(float)*featureWidth*featureWidth,cudaMemcpyDeviceToHost));
     Shape shape = {featureWidth,featureWidth};
     Matrix* m = self->matutil->newMatrix(h_feature,shape);
     retval[i] = m;
   }
-  cudaErrCheck(cudaFree(d_subPixelX));
-  cudaErrCheck(cudaFree(d_subPixelY));
-  cudaErrCheck(cudaFree(d_features));
+  cudaSafeCall(cudaFree(d_subPixelX));
+  cudaSafeCall(cudaFree(d_subPixelY));
+  cudaSafeCall(cudaFree(d_features));
   return retval;
 }
 

@@ -5,65 +5,52 @@
 
 typedef struct MatrixUtil MatrixUtil;
 
-typedef void (*m1m2rFunc)(MatrixUtil* , Matrix *, Matrix *, Matrix *);
-typedef int (*m1m2Func)(MatrixUtil* , Matrix *, Matrix *);
-typedef int* (*rpintm1Func)(MatrixUtil* , Matrix *);
-typedef float(*rfloatm1Func)(MatrixUtil*,Matrix*);
-typedef int (*rintm1Func)(MatrixUtil*,Matrix*);
-typedef float (*fm1m2Func)(MatrixUtil* , Matrix *, Matrix *);
-typedef void (*m1Func)(MatrixUtil* , Matrix *, Matrix*);
-typedef Matrix* (*mTFunc)(MatrixUtil* , Matrix *);
-typedef Matrix* (*mSFunc)(MatrixUtil* , Matrix *, Matrix*);
-typedef void (*m1fFunc)(MatrixUtil* , Matrix *, float, Matrix*);
-typedef void (*mrFunc)(MatrixUtil* , Matrix*, Matrix*);
-typedef Matrix* (*newMatrixFunc)(Shape);
-typedef Matrix* (*newMatrixWithFloatFunc)(float*,Shape);
-typedef void (*prettyPrintFunc)(MatrixUtil*,Matrix*,char*);
-typedef void (*syncMatrixFunc)(MatrixUtil* , Matrix*);
-typedef void (*mCopyFunc)(MatrixUtil*,Matrix*,Matrix*,Rect,Point2,Point2);
+typedef void (*mFunc)(MatrixUtil*, Matrix*);
+typedef void (*mmFunc)(MatrixUtil* , Matrix *, Matrix *);
+typedef void (*mmmFunc)(MatrixUtil* , Matrix *, Matrix *, Matrix *);
+
+typedef void (*mfmFunc)(MatrixUtil*, Matrix*, float, Matrix*);
+typedef void (*mpiFunc)(MatrixUtil*, Matrix*, int*);
+typedef void (*mpfFunc)(MatrixUtil*, Matrix*, float*);
+
+typedef void (*mmrectp2p2Func)(MatrixUtil*,Matrix*,Matrix*,Rect,Point2,Point2);
+
+typedef void (*msFunc)(MatrixUtil*,Matrix*,char*);
+
+typedef void* (*shapeFunc)(Shape);
+typedef void* (*pfshapeFunc)(float*,Shape);
 
 struct MatrixUtil
 {
-  int verbosity;
-  int deviceId;
-  newMatrixFunc newEmptyMatrix;
-  newMatrixWithFloatFunc newMatrix;
-  m1m2rFunc add;
-  m1m2rFunc subtract;
-  m1m2rFunc multiply;
-  m1fFunc multiplyConst;
-  m1m2rFunc divide;
-  m1fFunc divideConst;
-  rintm1Func maxIdx;
-  rfloatm1Func maxVal;
-  rpintm1Func minRows;
-  m1Func sqrt;
-  m1Func transpose;
-  fm1m2Func distance;
-  m1m2Func isEqual;
-  m1Func arctan;
-  m1Func exp;
-  m1Func log;
-  m1fFunc pow;
-  m1Func ceil;
-  m1Func floor;
-  m1Func abs;
-  m1m2rFunc dot;
-  m1m2rFunc featureDistance;
-  m1m2rFunc cross;
-  m1Func makeCrossMatrix;
-  m1Func inv;
-  mSFunc solve;
-  mSFunc lstsq;
+  shapeFunc newEmptyMatrix;
+  pfshapeFunc newMatrix;
 
-  mCopyFunc copy;
-  prettyPrintFunc pprint;
+  mmmFunc add, subtract, multiply divide, dot, cross;
+  mfmFunc addf, subtractf, multiplyf, dividef;
+
+  mmFunc abs, sqrt, cos, sin, tan, acos, asin, atan, exp, log;
+  mfmFunc pow;
+
+  mmFunc floor, ceil, transpose;
+  mmmFunc isEqual;
+
+  mmFunc inv;
+  mmmFunc solve, lstsq;
+
+  mpfFunc max, min;
+  mpiFunc argmax, argmin;
+  
+  mmrectp2p2Func slice, copy;
+  msFunc pprint;
+
+  //mmrFunc featureDistance;
+
 };
 
 DLLEXPORT MatrixUtil* GetMatrixUtil();
 
 DLLEXPORT void copyDeviceToDeviceCudaMatrix(Matrix* A, Matrix* B);
-DLLEXPORT void copyHostToDeviceCudaMatrix(Matrix* mat);
-DLLEXPORT void copyDeviceToHostCudaMatrix(Matrix* mat);
+DLLEXPORT void copyHostToDeviceCudaMatrix(Matrix* A);
+DLLEXPORT void copyDeviceToHostCudaMatrix(Matrix* A);
 
 #endif

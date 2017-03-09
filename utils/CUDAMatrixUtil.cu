@@ -8,11 +8,15 @@
   extern "C" {
 #endif
 
+#ifndef THREADS_PER_BLOCK
+  #define THREADS_PER_BLOCK 1024;
+#endif
+
 cudaStream_t _stream;
 cublasHandle_t _cublasHandle;
 cusolverDnHandle_t _cusolverHandle;
 
-void cudaErrCheck(cudaError_t stat)
+DLLEXPORT void cudaSafeCall(cudaError_t stat)
 {
   if (stat != cudaSuccess)
   {
@@ -20,7 +24,7 @@ void cudaErrCheck(cudaError_t stat)
   }
 }
 
-void cublasErrCheck(cublasStatus_t stat)
+void cublasSafeCall(cublasStatus_t stat)
 {
   if (stat != CUBLAS_STATUS_SUCCESS)
   {
@@ -28,7 +32,7 @@ void cublasErrCheck(cublasStatus_t stat)
   }
 }
 
-void cusolverErrCheck(cusolverStatus_t stat)
+void cusolverSafeCall(cusolverStatus_t stat)
 {
   if (stat != CUSOLVER_STATUS_SUCCESS)
   {
@@ -36,52 +40,65 @@ void cusolverErrCheck(cusolverStatus_t stat)
   }
 }
 
-void freeCudaMatrixDeviceMemory(Matrix* mat)
+void GPUWARN(char* s)
 {
-  cudaErrCheck(cudaFree(mat->devicePtr));
+    printf("\n\n##### GPU WARNING #####\n");
+    printf("%s",s);
+    printf("\n###################\n\n");
 }
 
-void freeCudaMatrixImpl(Matrix* m)
+void freeCudaMatrixDeviceMemory(Matrix* A)
 {
-  printf("matfree\n");
-  if (m->devicePtr != NULL)
+  cudaSafeCall(cudaFree(A->devicePtr));
+}
+
+void freeCudaMatrixImpl(Matrix* A)
+{
+  if (A->devicePtr != NULL)
   {
-    freeCudaMatrixDeviceMemory(m);
+    freeCudaMatrixDeviceMemory(A);
   }
-  free(m->hostPtr);
-  free(m);
+  free(A->hostPtr);
+  free(A);
 }
 
 DLLEXPORT void copyDeviceToDeviceCudaMatrix(Matrix* A, Matrix* B)
 {
     size_t size = sizeof(float)*A->shape.width*A->shape.height;
-    cudaErrCheck(cudaMemcpy(B->devicePtr,A->devicePtr,size,cudaMemcpyDeviceToDevice));
+    cudaSafeCall(cudaMemcpy(B->devicePtr,
+                            A->devicePtr,
+                            size,
+                            cudaMemcpyDeviceToDevice));
 }
 
-DLLEXPORT void copyHostToDeviceCudaMatrix(Matrix* mat)
+void copyHostToDeviceCudaMatrix(Matrix* A)
 {
-    size_t size = sizeof(float)*mat->shape.width*mat->shape.height;
     if (VERBOSITY > 3)
     {
-      printf("\n\n##### GPU WARNING #####\n");
-      printf("Copying from Host to Device");
-      printf("\n###################\n\n");
+      GPUWARN("Copying from Host to Device");
     }
-    cudaErrCheck(cudaMemcpy(mat->devicePtr,mat->hostPtr,size,cudaMemcpyHostToDevice));
-    mat->isHostSide = 0;
+
+    size_t size = sizeof(float)*A->shape.width*A->shape.height;
+    cudaSafeCall(cudaMemcpy(A->devicePtr,
+                            A->hostPtr,
+                            size,
+                            cudaMemcpyHostToDevice));
+    A->isHostSide = FALSE;
 }
 
-DLLEXPORT void copyDeviceToHostCudaMatrix(Matrix* mat)
+void copyDeviceToHostCudaMatrix(Matrix* A)
 {
-  size_t size = sizeof(float)*mat->shape.width*mat->shape.height;
   if (VERBOSITY > 3)
   {
-    printf("\n\n### GPU WARNING ###\n");
-    printf("Copying Device to Host");
-    printf("\n###################\n\n");
+    GPUWARN("Copying Device to Host");
   }
-  cudaErrCheck(cudaMemcpy(mat->hostPtr,mat->devicePtr,size,cudaMemcpyDeviceToHost));
-  mat->isHostSide = 1;
+
+  size_t size = sizeof(float)*A->shape.width*A->shape.height;
+  cudaSafeCall(cudaMemcpy(A->hostPtr,
+                          A->devicePtr,
+                          size,
+                          cudaMemcpyDeviceToHost));
+  A->isHostSide = TRUE;
 }
 
 float getCudaMatrixElementImpl(Matrix* self, Point2 index)
@@ -105,7 +122,7 @@ float* getCudaMatrixRegionImpl(Matrix* self, Rect rect)
   }
   else
   {
-    cudaErrCheck(cudaMalloc(&data,s));
+    cudaSafeCall(cudaMalloc(&data,s));
   }
 
   for (int y = 0; y < rect.shape.height; y++)
@@ -153,7 +170,7 @@ Matrix* newEmptyCudaMatrixImpl(Shape shape)
   float* h_data = (float*)malloc(sizeof(float)*shape.height*shape.width);
   memset(h_data,0,sizeof(float)*shape.height*shape.width);
   float* d_data;
-  cudaErrCheck(cudaMalloc(&d_data,sizeof(float)*shape.height*shape.width));
+  cudaSafeCall(cudaMalloc(&d_data,sizeof(float)*shape.height*shape.width));
 
   m->shape = shape;
   m->hostPtr = h_data;
@@ -165,6 +182,8 @@ Matrix* newEmptyCudaMatrixImpl(Shape shape)
   m->setElement = setCudaMatrixElementImpl;
   m->setRegion = setCudaMatrixRegionImpl;
   m->free = freeCudaMatrixImpl;
+  m->toDevice = copyHostToDeviceCudaMatrix;
+  m->toHost = copyDeviceToHostCudaMatrix;
 
   return m;
 }
@@ -176,133 +195,395 @@ Matrix* newCudaMatrixImpl(float* data, Shape shape)
   m->hostPtr = data;
   return m;
 }
-//############ BEGIN MATH FUNCS ##################
+
+//################################################
+//################################################
+//############## BEGIN MATH FUNCS ################
+//################################################
+//################################################
+
 //ADDITION
 void addCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B, Matrix* C)
 {
-  if (A->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(A);
-  }
-  if (B->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(B);
-  }
-  if (C->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(C);
-  }
+  assert(!A->isHostSide);
+  assert(!B->isHostSide);
+  assert(!C->isHostSide);
+
   copyDeviceToDeviceCudaMatrix(B,C);
+
   float a = 1;
-  cublasErrCheck(cublasSaxpy(_cublasHandle,A->shape.height*A->shape.width,&a,A->devicePtr,1,C->devicePtr,1));
+  cublasSafeCall(cublasSaxpy(_cublasHandle,
+                              A->shape.height*A->shape.width,
+                              &a,
+                              A->devicePtr,1,
+                              C->devicePtr,1));
+}
+
+void addfCudaMatrixImpl(MatrixUtil* self, Matrix* A, float* b, Matrix* C)
+{
+  assert(!A->isHostSide);
+  assert(!C->isHostSide);
+
+  cublasSafeCall(cublasSaxpy(_cublasHandle,
+                              A->shape.height*A->shape.width,
+                              &b,
+                              A->devicePtr,1,
+                              C->devicePtr,1));
 }
 
 //SUBTRACTION
 void subtractCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B, Matrix* C)
 {
-  if (A->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(A);
-  }
-  if (B->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(B);
-  }
-  if (C->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(C);
-  }
+  assert(!A->isHostSide);
+  assert(!B->isHostSide);
+  assert(!C->isHostSide);
+
   copyDeviceToDeviceCudaMatrix(A,C);
+
   float a = -1;
-  cublasErrCheck(cublasSaxpy(_cublasHandle,A->shape.height*A->shape.width,&a,B->devicePtr,1,C->devicePtr,1));
+  cublasSafeCall(cublasSaxpy(_cublasHandle,
+                              A->shape.height*A->shape.width,
+                              &a,
+                              B->devicePtr,1,
+                              C->devicePtr,1));
 }
 
-//MULTIPLYCONST
-void multiplyConstCudaMatrixImpl(MatrixUtil* self, Matrix* A, float b, Matrix* C)
+void subtracftCudaMatrixImpl(MatrixUtil* self, Matrix* A, float b, Matrix* C)
 {
-  if (A->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(A);
-  }
-  if (C->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(C);
-  }
-  cublasErrCheck(cublasSaxpy(_cublasHandle,A->shape.height*A->shape.width,&b,A->devicePtr,1,C->devicePtr,1));
+  assert(!A->isHostSide);
+  assert(!C->isHostSide);
+
+  copyDeviceToDeviceCudaMatrix(A,C);
+
+  (*b) = -1*(*b);
+  cublasSafeCall(cublasSaxpy(_cublasHandle,
+                              A->shape.height*A->shape.width,
+                              &b,
+                              A->devicePtr,1,
+                              C->devicePtr,1));
 }
+
+//MULTIPLY C=A*B
+void multiplyCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B, Matrix* C)
+{
+  assert(!A->isHostSide);
+  assert(!B->isHostSide);
+  assert(!C->isHostSide);
+
+  int length = A->shape.width*A->shape.height;
+  int bdimX = fmin(THREADS_PER_BLOCK,length);
+  dim3 bdim(bdimX);
+  dim3 gdim(length/bdimX + 1);
+  MultiplyElemWiseKernel<<<gdim, bdim,0,_stream>>>(A->devicePtr,B->devicePtr,C->devicePtr,A->shape);
+}
+
+void multiplyfCudaMatrixImpl(MatrixUtil* self, Matrix* A, float b, Matrix* C)
+{
+  assert(!A->isHostSide);
+  assert(!C->isHostSide);
+
+  cublasSafeCall(cublasSaxpy(_cublasHandle,
+                              A->shape.height*A->shape.width,
+                              &b,
+                              A->devicePtr,1,
+                              C->devicePtr,1));
+}
+
+
+//DIVIDE C=A/B
+void divideCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B, Matrix* C)
+{
+  assert(!A->isHostSide);
+  assert(!B->isHostSide);
+  assert(!C->isHostSide);
+
+  int length = A->shape.width*A->shape.height;
+  int bdimX = fmin(THREADS_PER_BLOCK,length);
+  dim3 bdim(bdimX);
+  dim3 gdim(length/bdimX + 1);
+  DivideElemWiseKernel<<<gdim, bdim,0,_stream>>>(A->devicePtr,B->devicePtr,C->devicePtr,A->shape);
+}
+
+void dividefCudaMatrixImpl(MatrixUtil* self, Matrix* A, float b, Matrix* C)
+{
+  assert(!A->isHostSide);
+  assert(!C->isHostSide);
+
+  (*b) = 1.0/(*b);
+  cublasSafeCall(cublasSaxpy(_cublasHandle,
+                              A->shape.height*A->shape.width,
+                              &b,
+                              A->devicePtr,1,
+                              C->devicePtr,1));
+}
+
+//DOT
+void dotCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B, Matrix* C)
+{
+  assert(!A->isHostSide);
+  assert(!B->isHostSide);
+  assert(!C->isHostSide);
+
+  float alpha = 1;
+  float beta = 0;
+  int lda, tda, tdb;
+  cublasOperation_t opA, opB;
+
+  if (A->T)
+  {
+    opA = CUBLAS_OP_T;
+    lda = A->shape.width;
+    tda = A->shape.height;
+  } else
+  {
+    opA = CUBLAS_OP_N;
+    lda = A->shape.height;
+    tda = A->shape.width;
+  }
+
+  if (B->T)
+  {
+    opB = CUBLAS_OP_T;
+    tdb = B->shape.height;
+  } else
+  {
+    opB = CUBLAS_OP_N;
+    tdb = B->shape.width;
+  }
+
+  cublasSafeCall(cublasSgemm(_cublasHandle,
+                           opA, opB,
+                           lda, tdb, tda,
+                           &alpha,
+                           A->devicePtr, A->shape.height,
+                           B->devicePtr, B->shape.height,
+                           &beta,
+                           C->devicePtr, C->shape.height));
+}
+
+void makeCrossMatrix(MatrixUtil* self, Matrix* A, Matrix* B)
+{
+  assert(!A->isHostSide);
+  assert(!B->isHostSide);
+  Cross3X3MatrixKernel<<<1,1,0,_stream>>>(A->devicePtr,B->devicePtr);
+}
+
+//CROSS
+void crossCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B, Matrix* C)
+{
+  assert(!A->isHostSide);
+  assert(!B->isHostSide);
+  assert(!C->isHostSide);
+
+  Shape shape = {3,3};
+  Matrix* Bx = self->newEmptyMatrix(shape);
+  Bx->toDevice(Bx);
+  self->makeCrossMatrix(self,B,Bx);
+  float alpha = 1;
+  float beta = 0;
+  cublasSafeCall(cublasSgemv(_cublasHandle,
+                                CUBLAS_OP_N, 3, 3,
+                                &alpha,
+                                Bx->devicePtr, 3,
+                                A->devicePtr, 1,
+                                &beta,
+                                C->devicePtr, 1));
+  Bx->free(Bx);
+}
+
+
+/////##############################
+
+void absCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B)
+{
+  assert(!A->isHostSide);
+  assert(!B->isHostSide);
+
+  int length = A->shape.width*A->shape.height;
+  int bdimX = fmin(THREADS_PER_BLOCK,length);
+  dim3 bdim(bdimX);
+  dim3 gdim(length/bdimX + 1);
+  AbsMatrixKernel<<<gdim, bdim, 0, _stream>>>(A->devicePtr,B->devicePtr,A->shape);
+}
+
+void sqrtCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B)
+{
+  assert(!A->isHostSide);
+  assert(!B->isHostSide);
+
+  int length = A->shape.width*A->shape.height;
+  int bdimX = fmin(THREADS_PER_BLOCK,length);
+  dim3 bdim(bdimX);
+  dim3 gdim(length/bdimX + 1);
+  SqrtMatrixKernel<<<gdim, bdim, 0, _stream>>>(A->devicePtr,B->devicePtr,A->shape);
+}
+
+void cosCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B)
+{
+  assert(!A->isHostSide);
+  assert(!B->isHostSide);
+
+  int length = A->shape.width*A->shape.height;
+  int bdimX = fmin(THREADS_PER_BLOCK,length);
+  dim3 bdim(bdimX);
+  dim3 gdim(length/bdimX + 1);
+  CosMatrixKernel<<<gdim, bdim, 0, _stream>>>(A->devicePtr,B->devicePtr,A->shape);
+}
+
+void sinCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B)
+{
+  assert(!A->isHostSide);
+  assert(!B->isHostSide);
+
+  int length = A->shape.width*A->shape.height;
+  int bdimX = fmin(THREADS_PER_BLOCK,length);
+  dim3 bdim(bdimX);
+  dim3 gdim(length/bdimX + 1);
+  SinMatrixKernel<<<gdim, bdim, 0, _stream>>>(A->devicePtr,B->devicePtr,A->shape);
+}
+
+void tanCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B)
+{
+  assert(!A->isHostSide);
+  assert(!B->isHostSide);
+
+  int length = A->shape.width*A->shape.height;
+  int bdimX = fmin(THREADS_PER_BLOCK,length);
+  dim3 bdim(bdimX);
+  dim3 gdim(length/bdimX + 1);
+  TanMatrixKernel<<<gdim, bdim, 0, _stream>>>(A->devicePtr,B->devicePtr,A->shape);
+}
+
+void acosCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B)
+{
+  assert(!A->isHostSide);
+  assert(!B->isHostSide);
+
+  int length = A->shape.width*A->shape.height;
+  int bdimX = fmin(THREADS_PER_BLOCK,length);
+  dim3 bdim(bdimX);
+  dim3 gdim(length/bdimX + 1);
+  ArccosMatrixKernel<<<gdim, bdim, 0, _stream>>>(A->devicePtr,B->devicePtr,A->shape);
+}
+
+void asinCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B)
+{
+  assert(!A->isHostSide);
+  assert(!B->isHostSide);
+
+  int length = A->shape.width*A->shape.height;
+  int bdimX = fmin(THREADS_PER_BLOCK,length);
+  dim3 bdim(bdimX);
+  dim3 gdim(length/bdimX + 1);
+  ArcsinMatrixKernel<<<gdim, bdim, 0, _stream>>>(A->devicePtr,B->devicePtr,A->shape);
+}
+
+void atanCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B)
+{
+  assert(!A->isHostSide);
+  assert(!B->isHostSide);
+
+  int length = A->shape.width*A->shape.height;
+  int bdimX = fmin(THREADS_PER_BLOCK,length);
+  dim3 bdim(bdimX);
+  dim3 gdim(length/bdimX + 1);
+  ArctanMatrixKernel<<<gdim, bdim, 0, _stream>>>(A->devicePtr,B->devicePtr,A->shape);
+}
+
+void logCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B)
+{
+  assert(!A->isHostSide);
+  assert(!B->isHostSide);
+
+  int length = A->shape.width*A->shape.height;
+  int bdimX = fmin(THREADS_PER_BLOCK,length);
+  dim3 bdim(bdimX);
+  dim3 gdim(length/bdimX + 1);
+  LogMatrixKernel<<<gdim, bdim, 0, _stream>>>(A->devicePtr,B->devicePtr,A->shape);
+}
+
+void expCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B)
+{
+  assert(!A->isHostSide);
+  assert(!B->isHostSide);
+
+  int length = A->shape.width*A->shape.height;
+  int bdimX = fmin(THREADS_PER_BLOCK,length);
+  dim3 bdim(bdimX);
+  dim3 gdim(length/bdimX + 1);
+  ExpMatrixKernel<<<gdim, bdim, 0, _stream>>>(A->devicePtr,B->devicePtr,A->shape);
+}
+
+//############################
 
 //MIN
 int* minRowsCudaMatrixImpl(MatrixUtil* self, Matrix* A)
 {
-  if (A->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(A);
-  }
+  assert(!A->isHostSide);
 
   int *idx = (int*)malloc(sizeof(int)*A->shape.height);
+
   for (int i = 0; i < A->shape.height; i++)
   {
-    cublasErrCheck(cublasIsamin(_cublasHandle, A->shape.width,
+    cublasSafeCall(cublasIsamin(_cublasHandle, A->shape.width,
                             A->devicePtr+(i*A->shape.width), 1, idx+i));
     idx[i] -= 1;
   }
   return idx;
 }
 
-float maxValCudaMatrixImpl(MatrixUtil* self, Matrix* A)
+float maxCudaMatrixImpl(MatrixUtil* self, Matrix* A)
 {
-  int c = self->maxIdx(self,A);
+  int c = self->argmax(self,A);
   Point2 idx = C2IDX(c,A->shape);
   return A->getElement(A,idx);
 }
 
-int maxIdxCudaMatrixImpl(MatrixUtil* self, Matrix* A)
+int argmaxCudaMatrixImpl(MatrixUtil* self, Matrix* A)
 {
-  if (A->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(A);
-  }
+  assert(!A->isHostSide);
 
   int idx = 0;
-  cublasErrCheck(cublasIsamax(_cublasHandle, A->shape.height*A->shape.width,
-                            A->devicePtr, 1, &idx));
+  cublasSafeCall(cublasIsamax(_cublasHandle,
+                              A->shape.height*A->shape.width,
+                              A->devicePtr, 1,
+                              &idx));
   idx -= 1;
   return idx;
 }
 
-void powCudaMatrixImpl(MatrixUtil* self, Matrix* A, float k, Matrix* C)
+float minCudaMatrixImpl(MatrixUtil* self, Matrix* A)
 {
-  if (A->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(A);
-  }
-  if (C->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(C);
-  }
-  int bdimX = fmin(1024,A->shape.width*A->shape.height);
-  dim3 bdim(bdimX);
-  dim3 gdim(A->shape.width*A->shape.height/bdimX + 1);
-  PowMatrixKernel<<<gdim,bdim,0,_stream>>>(A->devicePtr,k,C->devicePtr,A->shape.height,A->shape.width);
+  int c = self->argmin(self,A);
+  Point2 idx = C2IDX(c,A->shape);
+  return A->getElement(A,idx);
+}
+
+int argminCudaMatrixImpl(MatrixUtil* self, Matrix* A)
+{
+  assert(!A->isHostSide);
+
+  int idx = 0;
+  cublasSafeCall(cublasIsamin(_cublasHandle,
+                              A->shape.height*A->shape.width,
+                              A->devicePtr, 1,
+                              &idx));
+  idx -= 1;
+  return idx;
 }
 
 void transposeCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* C)
 {
-  if (A->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(A);
-  }
-  if (C->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(C);
-  }
+  assert(!A->isHostSide);
+  assert(!C->isHostSide);
+
   int bdimX = fmin(32,A->shape.width);
   int bdimY = fmin(32,A->shape.height);
   dim3 bdim(bdimX,bdimY);
   dim3 gdim(A->shape.height/bdimX+1,A->shape.width/bdimY + 1);
   TransposeMatrixKernel<<<gdim,bdim,0,_stream>>>(A->devicePtr,C->devicePtr,A->shape.height,A->shape.width);
 }
-
+/*
 float distanceCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B)
 {
   if (A->isHostSide)
@@ -319,95 +600,10 @@ float distanceCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B)
   self->subtract(self,A,B,C);
 
   float retval;
-  cublasErrCheck(cublasSnrm2(_cublasHandle,A->shape.height*A->shape.width,C->devicePtr,1,&retval));
+  cublasSafeCall(cublasSnrm2(_cublasHandle,A->shape.height*A->shape.width,C->devicePtr,1,&retval));
   return retval;
 }
 
-//DOT
-void dotCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B, Matrix* C)
-{
-  if (A->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(A);
-  }
-  if (B->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(B);
-  }
-  if (C->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(C);
-  }
-  float alpha = 1;
-  float beta = 0;
-  int lda, tda, tdb;
-  cublasOperation_t opA, opB;
-  if (A->T)
-  {
-    opA = CUBLAS_OP_T;
-    lda = A->shape.width;
-    tda = A->shape.height;
-  } else
-  {
-    opA = CUBLAS_OP_N;
-    lda = A->shape.height;
-    tda = A->shape.width;
-  }
-  if (B->T)
-  {
-    opB = CUBLAS_OP_T;
-    tdb = B->shape.height;
-  } else
-  {
-    opB = CUBLAS_OP_N;
-    tdb = B->shape.width;
-  }
-  cublasErrCheck(cublasSgemm(_cublasHandle,
-                           opA, opB,
-                           lda, tdb, tda,
-                           &alpha,
-                           A->devicePtr, A->shape.height,
-                           B->devicePtr, B->shape.height,
-                           &beta,
-                           C->devicePtr, C->shape.height));
-}
-
-void makeCrossMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* Ax)
-{
-  if (A->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(A);
-  }
-  if (Ax->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(Ax);
-  }
-  Cross3X3MatrixKernel<<<1,1,0,_stream>>>(A->devicePtr,Ax->devicePtr);
-}
-
-//CROSS
-void cross3X3MatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B, Matrix* C)
-{
-  if (A->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(A);
-  }
-  if (B->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(B);
-  }
-  if (C->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(C);
-  }
-  Shape shape = {3,3};
-  Matrix* Bx = self->newEmptyMatrix(shape);
-  self->makeCrossMatrix(self,B,Bx);
-  float alpha = 1;
-  float beta = 0;
-  cublasErrCheck(cublasSgemv(_cublasHandle, CUBLAS_OP_N, 3, 3, &alpha, Bx->devicePtr, 3, A->devicePtr, 1, &beta, C->devicePtr, 1));
-  Bx->free(Bx);
-}
 
 void featureDistanceCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B, Matrix* C)
 {
@@ -428,30 +624,28 @@ void featureDistanceCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B, Matri
   dim3 bdim(bdimX,bdimY);
   dim3 gdim(B->shape.height/bdimX + 1,A->shape.height/bdimY + 1);
   FeatureDistanceMatrixKernel<<<gdim,bdim,0,_stream>>>(A->devicePtr,A->shape.height,B->devicePtr,B->shape.height,C->devicePtr,A->shape.width);
-}
+}*/
 
 //inv
-void invCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* Ainv)
+void invCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B)
 {
-  if (A->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(A);
-  }
-  if (Ainv->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(Ainv);
-  }
+  assert(!A->isHostSide);
+  assert(!B->isHostSide);
 
   float* Acopy;
+
   size_t size = sizeof(float)*A->shape.height*A->shape.width;
-  cudaErrCheck(cudaMalloc(&Acopy,size));
-  cudaErrCheck(cudaMemcpy(Acopy,A->devicePtr,size,cudaMemcpyDeviceToDevice));
+  cudaSafeCall(cudaMalloc(&Acopy,size));
+  cudaSafeCall(cudaMemcpy(Acopy,
+                          A->devicePtr,
+                          size,
+                          cudaMemcpyDeviceToDevice));
 
   int n = A->shape.height;
   int Lwork;
 
   //GET BUFFER size
-  cusolverErrCheck(cusolverDnSgetrf_bufferSize(_cusolverHandle,
+  cusolverSafeCall(cusolverDnSgetrf_bufferSize(_cusolverHandle,
                       n,
                       n,
                       Acopy,
@@ -460,17 +654,17 @@ void invCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* Ainv)
 
   //Create Workspace
   float* workspace;
-  cudaErrCheck(cudaMalloc(&workspace,Lwork));
+  cudaSafeCall(cudaMalloc(&workspace,Lwork));
 
   //Prepare LU decomposition
   int* devIpiv;
-  cudaErrCheck(cudaMalloc(&devIpiv,sizeof(int)*n));
+  cudaSafeCall(cudaMalloc(&devIpiv,sizeof(int)*n));
 
   int* devInfo;
-  cudaErrCheck(cudaMalloc(&devInfo,sizeof(int)));
+  cudaSafeCall(cudaMalloc(&devInfo,sizeof(int)));
 
   //DECOMPOSE
-  cusolverErrCheck(cusolverDnSgetrf(_cusolverHandle,
+  cusolverSafeCall(cusolverDnSgetrf(_cusolverHandle,
            n,
            n,
            Acopy,
@@ -482,18 +676,18 @@ void invCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* Ainv)
   if (VERBOSITY > 3)
   {
     int* h_info = (int*)malloc(sizeof(int));
-    cudaErrCheck(cudaMemcpy(h_info,devInfo,sizeof(int),cudaMemcpyDeviceToHost));
+    cudaSafeCall(cudaMemcpy(h_info,devInfo,sizeof(int),cudaMemcpyDeviceToHost));
     printf("LU DECOMPOSITION INFO: %i\n",h_info[0]);
   }
 
   //right hand sides
   float B[] = {1,0,0,0,1,0,0,0,1};
   float *d_B;
-  cudaErrCheck(cudaMalloc(&d_B,size));
-  cudaErrCheck(cudaMemcpy(d_B,&B,size,cudaMemcpyHostToDevice));
+  cudaSafeCall(cudaMalloc(&d_B,size));
+  cudaSafeCall(cudaMemcpy(d_B,&B,size,cudaMemcpyHostToDevice));
 
   //solve
-  cusolverErrCheck(cusolverDnSgetrs(_cusolverHandle,
+  cusolverSafeCall(cusolverDnSgetrs(_cusolverHandle,
            CUBLAS_OP_N,
            n,
            n,
@@ -507,28 +701,23 @@ void invCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* Ainv)
   if (VERBOSITY > 3)
   {
     int* h_info = (int*)malloc(sizeof(int));
-    cudaErrCheck(cudaMemcpy(h_info,devInfo,sizeof(int),cudaMemcpyDeviceToHost));
+    cudaSafeCall(cudaMemcpy(h_info,devInfo,sizeof(int),cudaMemcpyDeviceToHost));
     printf("SOLVE INFO: %i\n",h_info[0]);
   }
 
-  cudaErrCheck(cudaMemcpy(Ainv->devicePtr,d_B,size,cudaMemcpyDeviceToDevice));
-  cudaErrCheck(cudaFree(workspace));
-  cudaErrCheck(cudaFree(devIpiv));
-  cudaErrCheck(cudaFree(devInfo));
-  cudaErrCheck(cudaFree(Acopy));
-  cudaErrCheck(cudaFree(d_B));
+  cudaSafeCall(cudaMemcpy(B->devicePtr,d_B,size,cudaMemcpyDeviceToDevice));
+  cudaSafeCall(cudaFree(workspace));
+  cudaSafeCall(cudaFree(devIpiv));
+  cudaSafeCall(cudaFree(devInfo));
+  cudaSafeCall(cudaFree(Acopy));
+  cudaSafeCall(cudaFree(d_B));
 }
 
-void copyCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B, Rect size, Point2 Aidx, Point2 Bidx)
+void copyCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B, Rect rect, Point2 Bidx)
 {
-  if (A->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(A);
-  }
-  if (B->isHostSide)
-  {
-    copyHostToDeviceCudaMatrix(B);
-  }
+  assert(!A->isHostSide);
+  assert(!B->isHostSide);
+
   int bdimX = fmin(32,size.shape.width);
   int bdimY = fmin(32,size.shape.height);
   dim3 bdim(bdimX,bdimY);
@@ -536,7 +725,18 @@ void copyCudaMatrixImpl(MatrixUtil* self, Matrix* A, Matrix* B, Rect size, Point
   CopyMatrixKernel<<<gdim,bdim,0,_stream>>>(A->devicePtr,A->shape.height,A->shape.width,Aidx,B->devicePtr,B->shape.height,B->shape.width,Bidx,size);
 }
 
-void SetCUDAMatrixUtilStream(cudaStream_t stream)
+Matrix* sliceCudaMatrixImpl(MatrixUtil* self, Matrix* A, Rect rect)
+{
+  assert(!A->isHostSide);
+
+  Matrix* B = self->newEmptyMatrix(self,rect.size);
+  B->toDevice(B);
+  Point2 Bidx = {0,0};
+  self->copy(self,A,B,rec,Bidx);
+  return B;
+}
+
+DLLEXPORT void SetCUDAMatrixUtilStream(cudaStream_t stream)
 {
     _stream = stream;
     cublasSetStream(_cublasHandle, stream);
@@ -561,11 +761,10 @@ void InitCUDAHandles()
 
 void pprintCudaMatrixImpl(MatrixUtil* self, Matrix* A, char* label)
 {
-  printf("\n\n################################################");
-  printf("\n%s:\n\n",label);
+  printf("\n\n############### %s #####################",label);
   if (!A->isHostSide)
   {
-    copyDeviceToHostCudaMatrix(A);
+    A->toHost(A);
   }
   for (int i = 0; i < A->shape.height; i++)
   {
@@ -574,61 +773,53 @@ void pprintCudaMatrixImpl(MatrixUtil* self, Matrix* A, char* label)
       Point2 idx = {j,i};
       printf("[ %f ]",A->getElement(A,idx));
     }
-    //printf("|  %f",y->getElement(y,i,0));
     printf("\n");
   }
   printf("\n################################################\n\n");
 }
 
-
-  DLLEXPORT MatrixUtil* GetMatrixUtil()
+DLLEXPORT MatrixUtil* GetMatrixUtil()
 {
-  MatrixUtil* cudaMatrixUtil = (MatrixUtil*)malloc(sizeof(MatrixUtil));
+  MatrixUtil* self = (MatrixUtil*)malloc(sizeof(MatrixUtil));
   InitCUDAHandles();
 
-  cudaMatrixUtil->newEmptyMatrix = newEmptyCudaMatrixImpl;
-  cudaMatrixUtil->newMatrix = newCudaMatrixImpl;
-  cudaMatrixUtil->copy = copyCudaMatrixImpl;
-  cudaMatrixUtil->pprint = pprintCudaMatrixImpl;
+  self->newEmptyMatrix = newEmptyCudaMatrixImpl;
+  self->newMatrix = newCudaMatrixImpl;
+  self->copy = copyCudaMatrixImpl;
+  self->pprint = pprintCudaMatrixImpl;
 
-  cudaMatrixUtil->add = addCudaMatrixImpl;
-  cudaMatrixUtil->subtract = subtractCudaMatrixImpl;
-  cudaMatrixUtil->dot = dotCudaMatrixImpl;
-  cudaMatrixUtil->multiplyConst = multiplyConstCudaMatrixImpl;
-  cudaMatrixUtil->distance = distanceCudaMatrixImpl;
-  cudaMatrixUtil->makeCrossMatrix = makeCrossMatrixImpl;
-  cudaMatrixUtil->cross = cross3X3MatrixImpl;
-  cudaMatrixUtil->inv = invCudaMatrixImpl;
-  cudaMatrixUtil->maxIdx = maxIdxCudaMatrixImpl;
-  cudaMatrixUtil->maxVal = maxValCudaMatrixImpl;
-  cudaMatrixUtil->minRows = minRowsCudaMatrixImpl;
-  cudaMatrixUtil->pow = powCudaMatrixImpl;
-  cudaMatrixUtil->featureDistance = featureDistanceCudaMatrixImpl;
-  cudaMatrixUtil->transpose = transposeCudaMatrixImpl;
-/*
-  cudaMatrixUtil->multiply = multiplyCudaMatrixImpl;
-  cudaMatrixUtil->divide = divideCudaMatrixImpl;
-  cudaMatrixUtil->divideConst = divideConstCudaMatrixImpl;
-  cudaMatrixUtil->pow = powCudaMatrixImpl;
-  cudaMatrixUtil->convolve = convolveCudaMatrixImpl;
-  cudaMatrixUtil->sqrt = sqrtCudaMatrixImpl;
-  cudaMatrixUtil->exp = expCudaMatrixImpl;
-  cudaMatrixUtil->log = logCudaMatrixImpl;
-  cudaMatrixUtil->arctan = arctanCudaMatrixImpl;
+  self->add = addCudaMatrixImpl;
+  self->addf = addfCudaMatrixImpl;
+  self->subtract = subtractCudaMatrixImpl;
+  self->subtractf = subtractfCudaMatrixxImpl;
+  self->multiply = multiplyCudaMatrixImpl;
+  self->multiplyf = multiplyfCudaMatrixImpl;
+  self->divide = divideCudaMatrixImpl;
+  self->dividef = dividefCudaMatrixImpl;
+  self->dot = dotCudaMatrixImpl;
+  self->cross = cross3X3MatrixImpl;
 
+  self->abs = absCudaMatrixImpl;
+  self->sqrt = sqrtCudaMatrixImpl;
+  self->cos = cosCudaMatrixImpl;
+  self->sin = sinCudaMatrixImpl;
+  self->tan = tanCudaMatrixImpl;
+  self->acos = acosCudaMatrixImpl;
+  self->asin = asinCudaMatrixImpl;
+  self->atan = atanCudaMatrixImpl;
+  self->exp = expCudaMatrixImpl;
+  self->log = logCudaMatrixImpl;
 
+  self->inv = invCudaMatrixImpl;
 
-  cudaMatrixUtil->solve = solveCudaMatrixImpl;
-  cudaMatrixUtil->lstsq = lstsqCudaMatrixImpl;
+  self->max = maxCudaMatrixImpl
+  self->argmax = argmaxCudaMatrixImpl;
+  self->min = minCudaMatrixImpl;
+  self->argmin = argminCudaMatrixImpl;
 
-  //cudaMatrixUtil->ceil = ceilCudaMatrixImpl;
-  //cudaMatrixUtil->floor = floorCudaMatrixImpl;
-  //cudaMatrixUtil->abs = absCudaMatrixImpl;
-  cudaMatrixUtil->isEqual = isEqualCudaMatrixImpl;
-  cudaMatrixUtil->convolve = convolveCudaMatrixImpl;*/
-
-  return cudaMatrixUtil;
+  return self;
 }
+
 #ifdef __cplusplus
   }
 #endif

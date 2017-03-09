@@ -5,7 +5,7 @@ __device__ int IDX2CKernel(int i, int j, int td)
   return (i*td)+j;
 }
 // LocalMax
-__global__ void LocalMaxKernel(float* pSrc, float* pDst, NppiSize oSize, int windowWidth)
+__global__ void LocalMaxKernel(float* pSrc, float* pDst, Shape oSize, int windowWidth)
 {
   int y = (blockIdx.y * blockDim.y) + threadIdx.y;
   int x = (blockIdx.x * blockDim.x) + threadIdx.x;
@@ -40,7 +40,7 @@ __global__ void LocalMaxKernel(float* pSrc, float* pDst, NppiSize oSize, int win
   }
 }
 
-__global__ void LocalMaxIdxKernel(float* pSrc, float* pDst, int* pIdx, NppiSize oSize, int windowWidth)
+__global__ void LocalArgMaxKernel(float* pSrc, Point2* pIdx, Shape oSize, int windowWidth)
 {
   int y = (blockIdx.y * blockDim.y) + threadIdx.y;
   int x = (blockIdx.x * blockDim.x) + threadIdx.x;
@@ -67,19 +67,18 @@ __global__ void LocalMaxIdxKernel(float* pSrc, float* pDst, int* pIdx, NppiSize 
     }
     if (maxIdx != offset)
     {
-      pIdx[IDX2CKernel(y,x,windowWidth)] = maxIdx;
-      pDst[maxIdx] = maxVal;
+      pIdx[IDX2CKernel(y,x,windowWidth)] = C2IDXKernel(maxIdx,oSize.width);
     } else
     {
-      pIdx[IDX2CKernel(y,x,windowWidth)] = -1;
-      pDst[maxIdx] = 0;
+      Point2 ret = {-1,-1};
+      pIdx[IDX2CKernel(y,x,windowWidth)] = ret;
     }
   }
 }
 
 
 //Local Contrast
-__global__ void LocalContrastKernel(float* pSrc, float* pDst, NppiSize oSize, int windowWidth)
+__global__ void LocalContrastKernel(float* pSrc, float* pDst, Shape oSize, int windowWidth)
 {
   int y = (blockIdx.y * blockDim.y) + threadIdx.y;
   int x = (blockIdx.x * blockDim.x) + threadIdx.x;
@@ -275,7 +274,7 @@ __global__ void MakeFeatureDescriptorKernel(float* pSrc, NppiSize oSize, float* 
   }
 }
 
-__global__ void SubPixelAlignKernel(float* pIx, float* pIy, float* pIxx, float* pIxy, float* pIyy, int* pIdx, float* pSubPixelX, float* pSubPixelY, NppiSize oSize, int nIdx)
+__global__ void SubPixelAlignKernel(float* pIx, float* pIy, float* pIxx, float* pIxy, float* pIyy, int* pIdx, Point2f* pSubPixel, NppiSize oSize, int nIdx)
 {
   int x = (blockIdx.x * blockDim.x) + threadIdx.x;
 
@@ -309,19 +308,17 @@ __global__ void SubPixelAlignKernel(float* pIx, float* pIy, float* pIxx, float* 
       dX = fcol - (1.0/det)*(Ixy*Iy - Iyy*Ix);
       dY = frow - (1.0/det)*(Ixy*Ix - Ixx*Iy);
 
-      pSubPixelY[x] = dY;
-      pSubPixelX[x] = dX;
+      pSubPixel[x] = {dX,dY};
     } else
     {
-      pSubPixelY[x] = -1;
-      pSubPixelX[x] = -1;
+      pSubPixel[x] = {-1,-1};
     }
   }
 }
 
 
 extern __shared__ int sharedData[];
-__global__ void EliminatePointsBelowThresholdKernel(float* pI, NppiSize oSize, float* pSubPixelX, float* pSubPixelY, int* pIndex, int nPoints, float* keepSubPixelX, float* keepSubPixelY, int* keepPoints, int* keepCount, float threshold)
+__global__ void EliminatePointsBelowThresholdKernel(float* pI, NppiSize oSize, Point2f* pSubPixel, int* pIndex, int nPoints, Point2f* keepSubPixel, int* keepPoints, int* keepCount, float threshold)
 {
   int x = (blockIdx.x * blockDim.x) + threadIdx.x;
 
@@ -333,15 +330,15 @@ __global__ void EliminatePointsBelowThresholdKernel(float* pI, NppiSize oSize, f
 
   if (x < nPoints)
   {
-    float thisx = pSubPixelX[x];
-    float thisy = pSubPixelY[x];
+    float thisx = pSubPixel[x].x;
+    float thisy = pSubPixel[x].y;
 
     if (thisx >= 0 && thisy >= 0 && thisx < oSize.width && thisy < oSize.height)
     {
       float contrast = ReadSubPixelKernel(pI,oSize,thisx,thisy);
       if (contrast > threshold)
       {
-        int inc = 1;
+        //int inc = 1;
         //unsigned int id = atomicAdd(thisKeepCount,inc);
         //if (id < nPoints)
         //{
@@ -358,22 +355,21 @@ __global__ void EliminatePointsBelowThresholdKernel(float* pI, NppiSize oSize, f
       int id = thisKeepPoints[i];
       if (id > 0)
       {
-        keepSubPixelX[x] = pSubPixelX[thisKeepPoints[i]];
-        keepSubPixelY[x] = pSubPixelY[thisKeepPoints[i]];
+        keepSubPixel[x] = pSubPixel[thisKeepPoints[i]];
         keepPoints[x] = pIndex[thisKeepPoints[i]];
       }
     }
   }
 }
 
-__global__ void EliminateEdgePointsKernel(float* pI, NppiSize oSize, float* pSubPixelX, float* pSubPixelY, int* pIndex, int nPoints, float* pIx, float* pIy, float* keepSubPixelX, float* keepSubPixelY, int* keepPoints, int* keepCount, float threshold)
+__global__ void EliminateEdgePointsKernel(float* pI, NppiSize oSize, Point2f* pSubPixel, int* pIndex, int nPoints, float* pIx, float* pIy, Point2f* keepSubPixel, int* keepPoints, int* keepCount, float threshold)
 {
   int x = (blockDim.x * blockIdx.x) + threadIdx.x;
 
   if (x < nPoints)
   {
-    float thisx = pSubPixelX[x];
-    float thisy = pSubPixelY[x];
+    float thisx = pSubPixel[x].x;
+    float thisy = pSubPixel[x].y;
 
     float Ix = ReadSubPixelKernel(pIx,oSize,thisx,thisy);
     float Iy = ReadSubPixelKernel(pIy,oSize,thisx,thisy);
@@ -385,8 +381,7 @@ __global__ void EliminateEdgePointsKernel(float* pI, NppiSize oSize, float* pSub
       {
         int id = atomicAdd(keepCount,1);
         keepPoints[id] = pIndex[x];
-        keepSubPixelX[id] = pSubPixelX[x];
-        keepSubPixelY[id] = pSubPixelY[x];
+        keepSubPixel[id] = pSubPixel[x];
       }
     }
 

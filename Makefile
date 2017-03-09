@@ -20,18 +20,21 @@ CUPATH = C:/Program\ Files/NVIDIA\ GPU\ Computing\ Toolkit/CUDA/v8.0
 
 all: clean structs utils generators operators
 
+setenv:
+	export PATH=$(shell pwd)/lib:$$PATH
+
 _structs:
 	nvcc -shared --compiler-options="-D EXPORTING" -I./ -o lib/$(REC_STRUCT) ./structs/$(REC_STRUCT).c -L./lib $(foreach lib,$(wildcard ./lib/*.lib),-l$(subst ./lib/,,$(subst .lib,,$(lib))))
 
 structs:
-	echo "BUILDING STRUCTS\n"
+	echo "BUILDING STRUCTS"
 	$(foreach obj,$(CV_STRUCTS),$(MAKE) REC_STRUCT="$(obj)" _structs;)
 
 _utils:
 	nvcc -shared --compiler-options="-D EXPORTING" -I./ $(GTKCFLAGS) -o lib/$(REC_UTIL) ./utils/$(REC_UTIL).c -L./lib -L$(GTKPATH)/lib $(GTKLIBS) $(foreach lib,$(wildcard ./lib/*.lib),-l$(subst ./lib/,,$(subst .lib,,$(lib))))
 
 utils:
-	echo "BUILDING UTILS\n"
+	echo "BUILDING UTILS"
 	nvcc -shared --compiler-options="-D EXPORTING" -I./ -I./lib -o lib/CUDAMatrixUtil $(CV_MATRIXUTIL) -L./lib $(CUDALIBS)
 	nvcc -shared --compiler-options="-D EXPORTING" -I./ -I./lib -o lib/CUDAImageUtil $(CV_IMAGEUTIL) -L./lib -lCUDAMatrixUtil $(CUDALIBS)
 	$(foreach obj,$(CV_UTILS),$(MAKE) REC_UTIL="$(obj)" _utils;)
@@ -40,20 +43,21 @@ _operators:
 	nvcc -shared --compiler-options="-D EXPORTING" -I./ -o lib/$(REC_OPERATOR) ./operators/$(REC_OPERATOR).c -L./lib $(foreach lib,$(wildcard ./lib/*.lib),-l$(subst ./lib/,,$(subst .lib,,$(lib))))
 
 operators:
-	echo "BUILDING OPERATORS\n"
+	echo "BUILDING OPERATORS"
 	$(foreach obj,$(CV_OPERATORS),$(MAKE) REC_OPERATOR="$(obj)" _operators;)
 
 _generators:
 	nvcc -shared --compiler-options="-D EXPORTING" -I./ -o lib/$(REC_GENERATOR) ./generators/$(REC_GENERATOR).c -L./lib $(foreach lib,$(wildcard ./lib/*.lib),-l$(subst ./lib/,,$(subst .lib,,$(lib))))
 
 generators:
-	echo "BUILDING GENERATOR\n"
+	echo "BUILDING GENERATOR"
 	$(foreach obj,$(CV_GENERATORS),$(MAKE) REC_GENERATOR="$(obj)" _generators;)
 
-
 app:
-	nvcc -I./ -I./lib/ $(GTKCFLAGS) -o $(OUTPUT) $(INPUT) -L./ -L./lib/ -L$(GTKPATH)/lib $(foreach lib,$(wildcard ./lib/*.lib),-l$(subst ./lib/,,$(subst .lib,,$(lib)))) $(GTKLIBS)
+	nvcc -I./ -I./lib $(GTKCFLAGS) -o $(OUTPUT) $(INPUT) -L$(GTKPATH)/lib -L./lib $(foreach lib,$(wildcard ./lib/*.exe),-l$(subst ./lib/,,$(subst .exe,,$(lib)))) $(GTKLIBS) $(CUDALIBS)
 
+run: setenv
+	$(FILE)
 
 clean:
 	rm -rf *.obj

@@ -1,9 +1,9 @@
-# computervision
-####(UNDER DEVELOPMENT)
+# chai
+### (UNDER DEVELOPMENT)
 
 A collection of math utilities , data structures, and computer vision methods all implemented in C and accelerated with [CUDA v8.0].
 
-##[Documentation]
+# [Documentation]
 
 # Example
 ```C

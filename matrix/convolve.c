@@ -12,16 +12,16 @@ int convolve(Matrix* a, Matrix* b, Matrix* out)
   memassert(out,DEVICE);
 
   Npp32f* pSrc = a->dev_ptr;
-  int nSrcStep = a->shape.height*sizeof(float);
-  NppiSize oSrcSize = {a->shape.height,a->shape.width};
+  int nSrcStep = a->shape.width*sizeof(float);
+  NppiSize oSrcSize = {a->shape.width,a->shape.height};
   NppiPoint oSrcOffset = {0,0};
 
   Npp32f* pDst = out->dev_ptr;
-  int nDstStep = a->shape.height*sizeof(float);
-  NppiSize oSizeROI = {a->shape.height,a->shape.width};
+  int nDstStep = a->shape.width*sizeof(float);
+  NppiSize oSizeROI = {a->shape.width,a->shape.height};
 
   Npp32f* pKernel = b->dev_ptr;
-  NppiSize oKernelSize = {b->shape.height,b->shape.width};
+  NppiSize oKernelSize = {b->shape.width,b->shape.height};
   NppiPoint oAnchor = {oKernelSize.width/2,oKernelSize.height/2};
 
   NppiBorderType eBorderType = NPP_BORDER_REPLICATE;

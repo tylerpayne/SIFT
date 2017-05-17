@@ -10,14 +10,12 @@ int copy(Matrix *a, Matrix *out, Rect region)
   memassert(out, DEVICE);
   for (int y = region.origin.y; y < region.origin.y + region.shape.height; y++)
   {
-    //cublas_safe_call(
     cuda_safe_call(cudaMemcpy(
       out->dev_ptr+(y-region.origin.y)*region.shape.width,
       a->dev_ptr+(y-region.origin.y)*a->shape.width,
       sizeof(float)*region.shape.width,
       cudaMemcpyDeviceToDevice
     ));
-    //);
   }
   return 0;
 }

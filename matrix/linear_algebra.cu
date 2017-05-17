@@ -1,5 +1,7 @@
 #include <matrix.h>
 
+extern cublasHandle_t _cublasHandle;
+
 void dot(Matrix *a, Matrix *b, Matrix *out)
 {
   memassert(a, DEVICE);
@@ -33,12 +35,15 @@ void dot(Matrix *a, Matrix *b, Matrix *out)
     tdb = b->shape.width;
   }
 
-  cublasSgemm(
+  cublas_safe_call(
+    cublasSgemm(_cublasHandle,
                            opA, opB,
                            lda, tdb, tda,
-                           alpha,
+                           &alpha,
                            a->dev_ptr, a->shape.height,
                            b->dev_ptr, b->shape.height,
-                           beta,
-                           out->dev_ptr, out->shape.height);
+                           &beta,
+                           out->dev_ptr, out->shape.height
+    )
+  );
 }

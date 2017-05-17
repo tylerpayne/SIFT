@@ -16,10 +16,15 @@
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 #include <vector_types.h>
-#include <cublas.h>
+#include <cublas_v2.h>
+#include <curand.h>
 #include <nppi.h>
+#include <lodepng.h>
 #include <errors.h>
 #include <assert.h>
+
+//extern cublasHandle_t _cublasHandle;
+//extern curandGenerator_t _curandGenerator;
 
 typedef struct {
   int x, y;

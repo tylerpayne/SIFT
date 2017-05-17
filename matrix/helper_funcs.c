@@ -32,7 +32,6 @@ void make_launch_parameters(Shape shape, int dim, dim3 *bdim, dim3 *gdim)
     dim3 g = {len/dim + 1,1,1};
 	  *bdim = b;
 	  *gdim = g;
-
   } else if (dim == 2)
   {
     int x_len = shape.width;
@@ -45,7 +44,6 @@ void make_launch_parameters(Shape shape, int dim, dim3 *bdim, dim3 *gdim)
 	  *gdim = g;
   }
 }
-
 #ifdef __cplusplus
 }
 #endif

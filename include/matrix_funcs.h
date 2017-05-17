@@ -16,11 +16,17 @@ __device__ int IDX2C_kernel(Point2 index, Shape shape);
 __device__ Point2 C2IDX_kernel(int i, Shape shape);
 __device__ int SHAPE2LEN_kernel(Shape shape);
 
+//CUDA_LIB_CALLS
+
+int init_cuda_libs();
+int destroy_cuda_libs();
+
 //CUDA_SAFE_CALLS
 
 void cublas_safe_call(cublasStatus_t err);
 void cuda_safe_call(cudaError_t err);
 void npp_safe_call(NppStatus err);
+void curand_safe_call(curandStatus_t err);
 
 //MATRIX INIT
 
@@ -44,14 +50,23 @@ int memassert(Matrix *m, int dest);
 //ARITHMETIC
 
 __global__ void add_kernel(float *a, float *b, float *c, Shape shape);
+__global__ void addc_kernel(float *a, float b, float *c, Shape shape);
 __global__ void subtract_kernel(float *a, float *b, float *c, Shape shape);
+__global__ void subtractc_kernel(float *a, float b, float *c, Shape shape);
 __global__ void multiply_kernel(float *a, float *b, float *c, Shape shape);
+__global__ void multiplyc_kernel(float *a, float b, float *c, Shape shape);
 __global__ void divide_kernel(float *a, float *b, float *c, Shape shape);
+__global__ void dividec_kernel(float *a, float b, float *c, Shape shape);
+
 
 int add(Matrix *a, Matrix *b, Matrix *out);
+int addc(Matrix *a, float b, Matrix *out);
 int subtract(Matrix *a, Matrix *b, Matrix *out);
+int subtractc(Matrix *a, float b, Matrix *out);
 int multiply(Matrix *a, Matrix *b, Matrix *out);
+int multiplyc(Matrix *a, float b, Matrix *out);
 int divide(Matrix *a, Matrix *b, Matrix *out);
+int dividec(Matrix *a, float b, Matrix *out);
 
 //LINEAR ALGEBRA
 
@@ -110,18 +125,26 @@ int mpow(Matrix *a, float e, Matrix *out);
 
 int convolve(Matrix* a, Matrix* b, Matrix* out);
 
+//STATISTICS
+
+
+int argmax(Matrix *a, int *index);
+
 //IMAGE
 
-int imgrad(Matrix* src, Matrix* dX, Matrix* dY, Matrix* mag, Matrix* angle);
-int resample(Matrix* a, Matrix* out, Shape shape);
+int imgrad(Matrix *src, Matrix* dX, Matrix* dY, Matrix* mag, Matrix* angle);
+int resample(Matrix *a, Matrix **out, Shape shape);
 
 // UTILITY
 
-int generateGaussian(Matrix *a, Shape shape, float w, float h);
+int generate_gaussian(Matrix **out, Shape shape, float w, float h);
 
 // RAND
-int uniform(Matrix *out, Shape shape);
+int rand_uniform(Matrix *out);
 
+// IMIO
+int load_image(Matrix **out, const char *filepath);
+int write_image(Matrix *im, const char *filepath);
 
 #ifdef __cplusplus
 }

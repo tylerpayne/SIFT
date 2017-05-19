@@ -18,6 +18,7 @@
 #include <vector_types.h>
 #include <cublas_v2.h>
 #include <curand.h>
+#include <npp.h>
 #include <nppi.h>
 #include <lodepng.h>
 #include <errors.h>

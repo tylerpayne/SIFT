@@ -4,21 +4,17 @@
 extern "C" {
 #endif
 
-extern cudaStream_t _cudaStream;
-
 extern cublasHandle_t _cublasHandle;
 
-int argmax(Matrix *a, int *index)
+int argmin(Matrix *a, int *index)
 {
   memassert(a,DEVICE);
-
   cublas_safe_call(
-    cublasIsamax(_cublasHandle,
+    cublasIsamin(_cublasHandle,
       SHAPE2LEN(a->shape),a->dev_ptr, sizeof(float),
       index
     )
   );
-
   return 0;
 }
 

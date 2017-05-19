@@ -9,14 +9,19 @@ int convolve(Matrix* a, Matrix* b, Matrix* out)
 {
   memassert(a,DEVICE);
   memassert(b,DEVICE);
-  memassert(out,DEVICE);
+
+  Matrix *ret;
+  if (out != NULL) ret = out;
+  else ret = a;
+
+  memassert(ret,DEVICE);
 
   Npp32f* pSrc = a->dev_ptr;
   int nSrcStep = a->shape.width*sizeof(float);
   NppiSize oSrcSize = {a->shape.width,a->shape.height};
   NppiPoint oSrcOffset = {0,0};
 
-  Npp32f* pDst = out->dev_ptr;
+  Npp32f* pDst = ret->dev_ptr;
   int nDstStep = a->shape.width*sizeof(float);
   NppiSize oSizeROI = {a->shape.width,a->shape.height};
 

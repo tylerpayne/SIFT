@@ -4,6 +4,8 @@
 extern "C" {
 #endif
 
+extern cudaStream_t _cudaStream;
+
 int mcos(Matrix *a, Matrix *out)
 {
   memassert(a,DEVICE);
@@ -15,7 +17,7 @@ int mcos(Matrix *a, Matrix *out)
 
   dim3 bdim,gdim;
   make_launch_parameters(a->shape,1,&bdim,&gdim);
-  cos_kernel<<<gdim,bdim>>>(a->dev_ptr,ret->dev_ptr,a->shape);
+  cos_kernel<<<gdim,bdim,0,_cudaStream>>>(a->dev_ptr,ret->dev_ptr,a->shape);
   return 0;
 }
 
@@ -30,7 +32,7 @@ int msin(Matrix *a, Matrix *out)
 
   dim3 bdim,gdim;
   make_launch_parameters(a->shape,1,&bdim,&gdim);
-  sin_kernel<<<gdim,bdim>>>(a->dev_ptr,ret->dev_ptr,a->shape);
+  sin_kernel<<<gdim,bdim,0,_cudaStream>>>(a->dev_ptr,ret->dev_ptr,a->shape);
   return 0;
 }
 
@@ -45,7 +47,7 @@ int mtan(Matrix *a, Matrix *out)
 
   dim3 bdim,gdim;
   make_launch_parameters(a->shape,1,&bdim,&gdim);
-  tan_kernel<<<gdim,bdim>>>(a->dev_ptr,ret->dev_ptr,a->shape);
+  tan_kernel<<<gdim,bdim,0,_cudaStream>>>(a->dev_ptr,ret->dev_ptr,a->shape);
   return 0;
 }
 
@@ -60,7 +62,7 @@ int macos(Matrix *a, Matrix *out)
 
   dim3 bdim,gdim;
   make_launch_parameters(a->shape,1,&bdim,&gdim);
-  acos_kernel<<<gdim,bdim>>>(a->dev_ptr,ret->dev_ptr,a->shape);
+  acos_kernel<<<gdim,bdim,0,_cudaStream>>>(a->dev_ptr,ret->dev_ptr,a->shape);
   return 0;
 }
 
@@ -75,7 +77,7 @@ int masin(Matrix *a, Matrix *out)
 
   dim3 bdim,gdim;
   make_launch_parameters(a->shape,1,&bdim,&gdim);
-  asin_kernel<<<gdim,bdim>>>(a->dev_ptr,ret->dev_ptr,a->shape);
+  asin_kernel<<<gdim,bdim,0,_cudaStream>>>(a->dev_ptr,ret->dev_ptr,a->shape);
   return 0;
 }
 
@@ -90,7 +92,7 @@ int matan(Matrix *a, Matrix *out)
 
   dim3 bdim,gdim;
   make_launch_parameters(a->shape,1,&bdim,&gdim);
-  atan_kernel<<<gdim,bdim>>>(a->dev_ptr,ret->dev_ptr,a->shape);
+  atan_kernel<<<gdim,bdim,0,_cudaStream>>>(a->dev_ptr,ret->dev_ptr,a->shape);
   return 0;
 }
 
@@ -106,7 +108,7 @@ int matan2(Matrix *a, Matrix *b, Matrix *out)
 
   dim3 bdim,gdim;
   make_launch_parameters(a->shape,1,&bdim,&gdim);
-  atan2_kernel<<<gdim,bdim>>>(a->dev_ptr,b->dev_ptr,ret->dev_ptr,a->shape);
+  atan2_kernel<<<gdim,bdim,0,_cudaStream>>>(a->dev_ptr,b->dev_ptr,ret->dev_ptr,a->shape);
   return 0;
 }
 
@@ -122,7 +124,7 @@ int mhypot(Matrix *a, Matrix *b, Matrix *out)
 
   dim3 bdim,gdim;
   make_launch_parameters(a->shape,1,&bdim,&gdim);
-  hypot_kernel<<<gdim,bdim>>>(a->dev_ptr,b->dev_ptr,ret->dev_ptr,a->shape);
+  hypot_kernel<<<gdim,bdim,0,_cudaStream>>>(a->dev_ptr,b->dev_ptr,ret->dev_ptr,a->shape);
   return 0;
 }
 

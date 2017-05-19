@@ -20,7 +20,7 @@ all:
 	$(MAKE) clean
 
 compile:
-	$(CC) --compiler-options=-fPIC -std=c++11 --device-c -I./include $(COMMON_C_SOURCES) $(COMMON_CU_SOURCES) $(shell ls $(CURRENT)/*.c) $(shell ls $(CURRENT)/*.cu) -lcublas -lcurand -lnppi
+	$(CC) --compiler-options=-fPIC -std=c++11 --device-c -I./include $(COMMON_C_SOURCES) $(COMMON_CU_SOURCES) $(shell ls $(CURRENT)/*.c) $(shell ls $(CURRENT)/*.cu) -lnppc -lcublas -lcurand -lnppi
 
 link:
 	$(CC) -shared --compiler-options=-fPIC -std=c++11 -I./src $(shell ls *.o) -o bin/lib$(CURRENT).so
@@ -32,4 +32,4 @@ clean:
 	rm *.o
 
 app:
-	$(CC) -std=c++11 -Iinclude $(INPUT) -o $(OUTPUT) -Lbin -lmatrix -lcublas -lnppi -lcurand
+	$(CC) -std=c++11 -Iinclude $(INPUT) -o $(OUTPUT) -Lbin -lmatrix -lcublas -lnppc -lnppi -lcurand

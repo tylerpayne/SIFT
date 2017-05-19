@@ -5,11 +5,11 @@
 extern "C" {
 #endif
 
-int resample(Matrix *a, Matrix **out, Shape shape)
+int resample(Matrix *a, Matrix *out, Shape shape)
 {
   memassert(a,DEVICE);
-  new_empty_matrix(out,shape);
-  Matrix *ret = *out;
+
+  Matrix *ret = out;
   memassert(ret,DEVICE);
 
   Npp32f* pSrc = a->dev_ptr;

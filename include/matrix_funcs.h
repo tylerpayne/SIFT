@@ -20,6 +20,7 @@ __device__ int SHAPE2LEN_kernel(Shape shape);
 
 int init_cuda_libs();
 int destroy_cuda_libs();
+int set_stream(cudaStream_t stream);
 
 //CUDA_SAFE_CALLS
 
@@ -37,15 +38,25 @@ int free_matrix(Matrix *m);
 
 //INDEXING
 
-__global__ void get_region_kernel(float *a, float *b, Shape shape, Rect region);
+__global__ void copy_region_kernel(float *a, float *b, Point2 a_idx, Point2 b_idx, Shape region, Shape a_shape, Shape b_shape);
 
 float get_element(Matrix *a, Point2 id);
+int copy_region(Matrix *a, Matrix *out, Point2 a_idx, Point2 out_idx, Shape shape);
 int copy(Matrix *a, Matrix *out, Rect region);
 
+__global__ void fill_kernel(float *a, float b, Shape shape);
+int fill(Matrix *a, float b);
+
+__global__ void linfill_kernel(float *a, float from, float step, Shape shape);
+int linfill(Matrix *a, float from, float to);
 
 //MEMCHECK
 
 int memassert(Matrix *m, int dest);
+
+//tile
+
+int tile(Matrix *a, Matrix *b, Matrix *out, Shape window, int (*op)(Matrix*,Matrix*,Matrix*));
 
 //ARITHMETIC
 
@@ -68,9 +79,11 @@ int multiplyc(Matrix *a, float b, Matrix *out);
 int divide(Matrix *a, Matrix *b, Matrix *out);
 int dividec(Matrix *a, float b, Matrix *out);
 
-//LINEAR ALGEBRA
+//VECTOR + MATRIX OPs
 
-void dot(Matrix *a, Matrix *b, Matrix *out);
+void mdot(Matrix *a, Matrix *b, Matrix *out);
+int euclid_norm(Matrix *a, float *out);
+int sum(Matrix *a, float *out);
 
 //LOGIC
 
@@ -127,13 +140,23 @@ int convolve(Matrix* a, Matrix* b, Matrix* out);
 
 //STATISTICS
 
-
 int argmax(Matrix *a, int *index);
+int argmin(Matrix *a, int *index);
+int count_in_range(Matrix *a, float from, float to, int *count);
 
+__global__ void range_reduce_kernel(float *a, float from, float to, int *d_index, Shape shape);
+int range_reduce(Matrix *a, float from, float to, int **index_array, int *len);
+
+int histogram_range(Matrix *a, Matrix *ranges, int *d_histogram);
 //IMAGE
 
 int imgrad(Matrix *src, Matrix* dX, Matrix* dY, Matrix* mag, Matrix* angle);
-int resample(Matrix *a, Matrix **out, Shape shape);
+int resample(Matrix *a, Matrix *out, Shape shape);
+int dilate(Matrix *a, unsigned char *d_b, Shape b_shape, Matrix *out);
+
+int dog(Matrix *a, Matrix *out, Shape kernel_shape, float std1, float std2);
+int draw_crosshairs(Matrix *a, int *index_array, int len, int cross_width, float brightness);
+int get_features(Matrix *a, Matrix *features, int *index_array, int len, Shape feature_shape);
 
 // UTILITY
 

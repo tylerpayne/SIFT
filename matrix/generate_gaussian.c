@@ -11,9 +11,14 @@ int generate_gaussian(Matrix **out, Shape shape, float w, float h)
     for (int x = 0; x < shape.width; x++)
     {
       Point2 p = {x,y};
-      g[IDX2C(p,shape)] = sqrt(1.0/(2.0*M_PI))*exp(-1.0*(pow(x-w_radius,2.0)/(2*(w*w)) + pow(y-h_radius,2.0)/(2*(h*h))));
+      g[IDX2C(p,shape)] = (((x-w_radius)*(x-w_radius))/(2*(w*w))) + (((y-h_radius)*(y-h_radius))/(2*(h*h)));
     }
   }
   new_host_matrix(out,g,shape);
+  multiplyc(*out,-1.0,NULL);
+  mexp(*out,NULL);
+  float norm;
+  euclid_norm(*out,&norm);
+  dividec(*out,norm,NULL);
   return 0;
 }

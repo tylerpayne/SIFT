@@ -10,8 +10,8 @@ int imgrad(Matrix* src, Matrix* dX, Matrix* dY, Matrix* mag, Matrix* angle)
   memassert(src,DEVICE);
 
   Npp32f* pSrc = src->dev_ptr;
-  int nSrcStep = src->shape.height*sizeof(float);
-  NppiSize oSrcSize = {src->shape.height,src->shape.width};
+  int nSrcStep = src->shape.width*sizeof(float);
+  NppiSize oSrcSize = {src->shape.width,src->shape.height};
   NppiPoint oSrcOffset = {0,0};
 
   Npp32f* pDstX = NULL;
@@ -52,7 +52,7 @@ int imgrad(Matrix* src, Matrix* dX, Matrix* dY, Matrix* mag, Matrix* angle)
     nDstAngleStep = nSrcStep;
   }
 
-  NppiSize oSizeROI = {src->shape.height,src->shape.width};
+  NppiSize oSizeROI = {src->shape.width,src->shape.height};
   NppiNorm eNorm = nppiNormL2;
   NppiMaskSize eMaskSize = NPP_MASK_SIZE_3_X_3;
   NppiBorderType eBorderType = NPP_BORDER_REPLICATE;
@@ -63,6 +63,7 @@ int imgrad(Matrix* src, Matrix* dX, Matrix* dY, Matrix* mag, Matrix* angle)
                                                     pDstMag,nDstMagStep,
                                                     pDstAngle,nDstAngleStep,
                                                     oSizeROI,eMaskSize,eNorm,eBorderType));
+  
   return 0;
 }
 

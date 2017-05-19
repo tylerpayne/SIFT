@@ -2,7 +2,7 @@
 
 extern cublasHandle_t _cublasHandle;
 
-void dot(Matrix *a, Matrix *b, Matrix *out)
+void mdot(Matrix *a, Matrix *b, Matrix *out)
 {
   memassert(a, DEVICE);
   memassert(b, DEVICE);

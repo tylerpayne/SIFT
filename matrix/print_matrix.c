@@ -14,7 +14,7 @@ int print_matrix(Matrix *a, const char *msg)
     for (int j = 0; j < a->shape.width; j++)
     {
       Point2 id = {j,i};
-      printf("[%.2f]",get_element(a,id));
+      printf("[%3.3f]",get_element(a,id));
     }
     printf("\n");
   }

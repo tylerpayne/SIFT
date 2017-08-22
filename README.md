@@ -133,11 +133,12 @@ int write_image(Matrix *im, const char *filepath);
 int imgrad(Matrix *src, Matrix* dX, Matrix* dY, Matrix* mag, Matrix* angle);
 int resample(Matrix *a, Matrix *out, Shape shape);
 int dog(Matrix *a, Matrix *out, Shape kernel_shape, float std1, float std2); // differnce of gaussian
-```
+````
 
 Signal
 ````C
 int convolve(Matrix* a, Matrix* b, Matrix* out);
 ````
+
 ### disclaimer
 chai is an academic project of mine and is therefore unstable and constantly under development. I do not claim it to be production viable.

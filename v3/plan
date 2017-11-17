@@ -1,0 +1,35 @@
+namespace chai
+{
+  class Tuple<K>;
+  class Rect<K>;
+  
+  namespace cuda
+  {
+    void init_cuda_libs();
+    void destroy_cuda_libs();
+    void set_stream(cudaStream_t s);
+    void safe_call<T>(T err)
+    
+    void cublas_safe_call(cublasStatus_t err);
+    void cuda_safe_call(cudaError_t err);
+    void npp_safe_call(NppStatus err);
+    void curand_safe_call(curandStatus_t err);
+  }
+  
+  class Matrix<K>
+  {
+    private:
+      static void memassert(Matrix m, int dest);
+    
+    public:
+      bool isHostSide, T;
+      T *host_ptr, *dev_ptr;
+      Tuple<int> shape;
+     
+      Matrix(Tuple<int> s);
+      Matrix(K* ptr, bool isHostPtr, Tuple<int> s);
+      Matrix(K c, bool isOnHost, Tuple<int> s);
+
+      ~Matrix();
+  }
+}

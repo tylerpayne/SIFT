@@ -27,14 +27,14 @@
 namespace chai
 {
   template <typename K>
-  class Tuple
+  class tuple
   {
   public:
     K *components;
     int length;
-    Tuple();
-    Tuple(Tuple<K> *t);
-    Tuple(std::initializer_list<K> coords);
+    tuple();
+    tuple(tuple<K> *t);
+    tuple(std::initializer_list<K> coords);
 
     K operator()(int i);
 
@@ -47,36 +47,36 @@ namespace chai
   class Rect
   {
   public:
-    Tuple<K> origin;
-    Tuple<int> shape;
-    Rect(Tuple<K> p, Tuple<int> s) {origin = p; shape = s;}
+    tuple<K> origin;
+    tuple<int> shape;
+    Rect(tuple<K> p, tuple<int> s) {origin = p; shape = s;}
   };
 
   template <typename K>
-  class Matrix
+  class matrix
   {
   public:
     bool isHostSide, T;
     K *host_ptr, *dev_ptr;
-    Tuple<int> shape;
+    tuple<int> shape;
     cudaStream_t stream;
 
-    static void basic_init(Matrix<K> *m, Tuple<int> &s, bool isOnHost);
-    static void empty_init(Matrix<K> *m, Tuple<int> &s, bool isOnHost);
-    static void const_init(Matrix<K> *m, K val, Tuple<int> &s, bool isOnHost);
+    static void basic_init(matrix<K> *m, tuple<int> &s, bool isOnHost);
+    static void empty_init(matrix<K> *m, tuple<int> &s, bool isOnHost);
+    static void const_init(matrix<K> *m, K val, tuple<int> &s, bool isOnHost);
 
-    static void memassert(Matrix<K> *m, int dest);
+    static void memassert(matrix<K> *m, int dest);
 
-    Matrix(std::initializer_list<int> s);
-    Matrix(Tuple<int> &s);
-    Matrix(K* ptr, bool isHostPtr, Tuple<int> &s);
-    Matrix(K c, bool onHost, Tuple<int> &s);
+    matrix(std::initializer_list<int> s);
+    matrix(tuple<int> &s);
+    matrix(K* ptr, bool isHostPtr, tuple<int> &s);
+    matrix(K c, bool onHost, tuple<int> &s);
 
-    Matrix operator()(std::initializer_list<int> rows, std::initializer_list<int> cols);
-    Matrix operator()(Tuple<int> &rows, Tuple<int> &cols);
-    Matrix operator+(Matrix<K> m);
+    matrix operator()(std::initializer_list<int> rows, std::initializer_list<int> cols);
+    matrix operator()(tuple<int> &rows, tuple<int> &cols);
+    matrix operator+(matrix<K> m);
 
-    ~Matrix();
+    ~matrix();
   };
 
   namespace cuda
@@ -93,14 +93,14 @@ namespace chai
     void npp_safe_call(NppStatus err);
     void curand_safe_call(curandStatus_t err);
 
-    __device__ int tuple_product(Tuple<int> shape);
+    __device__ int tuple_product(tuple<int> shape);
     __device__ void C2IDX_kernel(int i, int shape[2], int *r, int *c);
     __device__ int IDX2C_kernel(int index[2], int shape[2]);
   }
 
-  int IDX2C(Tuple<int> index, Tuple<int> shape);
-  Tuple<int> C2IDX(int i, Tuple<int> shape);
-  void make_launch_parameters(Tuple<int> shape, int dim, dim3 *bdim, dim3 *gdim);
+  int IDX2C(tuple<int> index, tuple<int> shape);
+  tuple<int> C2IDX(int i, tuple<int> shape);
+  void make_launch_parameters(tuple<int> shape, int dim, dim3 *bdim, dim3 *gdim);
 }
 
 #include <kernels.h>

@@ -2,14 +2,14 @@
 namespace chai
 {
     template <typename K>
-    Tuple<K>::Tuple()
+    tuple<K>::tuple()
     {
       this->length=-1;
       this->components=NULL;
     }
 
     template <typename K>
-    Tuple<K>::Tuple(Tuple<K> *t)
+    tuple<K>::tuple(tuple<K> *t)
     {
       this->length = t->length;
       size_t size = sizeof(K)*this->length;
@@ -18,7 +18,7 @@ namespace chai
     }
 
     template<typename K>
-    Tuple<K>::Tuple(std::initializer_list<K> coords)
+    tuple<K>::tuple(std::initializer_list<K> coords)
     {
       this->length = static_cast<int>(coords.size());
       size_t size = sizeof(K)*this->length;
@@ -27,7 +27,7 @@ namespace chai
     }
 
     template <typename K>
-    K Tuple<K>::prod()
+    K tuple<K>::prod()
     {
       K retval = this->components[0];
       for (int i = 1; i < this->length; i++)
@@ -38,7 +38,7 @@ namespace chai
     }
 
     template <typename K>
-    K Tuple<K>::norm()
+    K tuple<K>::norm()
     {
       K retval = this->components[0];
       for (int i = 1; i < this->length; i++)
@@ -49,7 +49,7 @@ namespace chai
     }
 
     template <typename K>
-    K Tuple<K>::norm(int l)
+    K tuple<K>::norm(int l)
     {
       K retval = this->components[0];
       for (int i = 1; i < this->length; i++)
@@ -60,7 +60,7 @@ namespace chai
     }
 
     template <typename K>
-    K Tuple<K>::operator()(int i)
+    K tuple<K>::operator()(int i)
     {
         return this->components[i];
     }

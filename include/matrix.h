@@ -2,14 +2,14 @@
 namespace chai {
 
   template<typename K>
-  void Matrix<K>::basic_init(Matrix<K> *m, Tuple<int> &s, bool isOnHost)
+  void matrix<K>::basic_init(matrix<K> *m, tuple<int> &s, bool isOnHost)
   {
     m->shape = s;
     m->isHostSide = true;
   }
 
   template<typename K>
-  void Matrix<K>::empty_init(Matrix<K> *m, Tuple<int> &s, bool isOnHost)
+  void matrix<K>::empty_init(matrix<K> *m, tuple<int> &s, bool isOnHost)
   {
     basic_init(m,s,true);
     if (m->isHostSide)
@@ -28,21 +28,21 @@ namespace chai {
   }
 
   template<typename K>
-  Matrix<K>::Matrix(Tuple<int> &s)
+  matrix<K>::matrix(tuple<int> &s)
   {
     empty_init(this,s,true);
     printf("returning matrix\n");
   }
 
   template<typename K>
-  Matrix<K>::Matrix(std::initializer_list<int> s)
+  matrix<K>::matrix(std::initializer_list<int> s)
   {
-    Tuple<int> t(s);
+    tuple<int> t(s);
     empty_init(this,t,true);
   }
 
   template<typename K>
-  Matrix<K>::Matrix(K* ptr, bool isHostPtr, Tuple<int> &s)
+  matrix<K>::matrix(K* ptr, bool isHostPtr, tuple<int> &s)
   {
     basic_init(s,isHostPtr);
     if (isHostPtr)
@@ -57,7 +57,7 @@ namespace chai {
   }
 
   template<typename K>
-  Matrix<K>::Matrix(K c, bool onHost, Tuple<int> &s)
+  matrix<K>::matrix(K c, bool onHost, tuple<int> &s)
   {
     empty_init(s,onHost);
     if (onHost)
@@ -75,7 +75,7 @@ namespace chai {
   }
 
   template <typename K>
-  Matrix<K>::~Matrix()
+  matrix<K>::~matrix()
   {
     if (this->isHostSide)
     {
@@ -89,17 +89,17 @@ namespace chai {
   }
 
   template <typename K>
-  Matrix<K> Matrix<K>::operator()(std::initializer_list<int> rows, std::initializer_list<int> cols)
+  matrix<K> matrix<K>::operator()(std::initializer_list<int> rows, std::initializer_list<int> cols)
   {
-    Tuple<int> r(rows);
-    Tuple<int> c(cols);
+    tuple<int> r(rows);
+    tuple<int> c(cols);
     return (*this)(r,c);
   }
 
   template <typename K>
-  Matrix<K> Matrix<K>::operator()(Tuple<int> &rows, Tuple<int> &cols)
+  matrix<K> matrix<K>::operator()(tuple<int> &rows, tuple<int> &cols)
   {
-    Matrix ret({rows.length, cols.length});
+    matrix ret({rows.length, cols.length});
     //COPY!
     if (this->isHostSide)
     {
@@ -112,12 +112,12 @@ namespace chai {
   }
 
   template <typename K>
-  Matrix<K> Matrix<K>::operator+(Matrix<K> m)
+  matrix<K> matrix<K>::operator+(matrix<K> m)
   {
     memassert(this,DEVICE);
     memassert(m,DEVICE);
 
-    Matrix<K> ret(this->shape);
+    matrix<K> ret(this->shape);
 
     memassert(ret,DEVICE);
 
@@ -140,7 +140,7 @@ namespace chai {
 
   extern cudaStream_t _cudaStream;
   template<typename K>
-  void Matrix<K>::memassert(int dest)
+  void matrix<K>::memassert(int dest)
   {
     if (this->isHostSide != dest)
     {

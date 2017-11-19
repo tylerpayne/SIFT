@@ -1,5 +1,5 @@
 # chai
-chai is a C++ matrix library accelerated by CUDA. 
+chai is a C++ matrix library accelerated by CUDA.
 
 # usage
 a basic example:
@@ -10,12 +10,12 @@ int main(int argc, char **argv)
 {
   cuda::init_cuda_libs(); // must call before using chai
 
-  Tuple<int> s1({10,20});
+  tuple<int> s1({10,20});
 
-  Matrix<int> m1(s1);
-  Matrix<int> m2({10,20});
+  matrix<int> m1(s1);
+  matrix<int> m2({10,20});
 
-  Matrix<int> m3 = m1 + m2;
+  matrix<int> m3 = m1 + m2;
 
   cuda::destroy_cuda_libs(); // best practice
   return 0;
@@ -29,8 +29,8 @@ int main(int argc, char **argv)
 ````C++
 namespace chai
 {
-  class Tuple;
-  class Matrix;
+  class tuple;
+  class matrix;
   namespace cuda
   {
     void init_cuda_libs();
@@ -44,7 +44,7 @@ namespace chai
 
 ````C++
 template <typename K>
-class Tuple
+class tuple
 {
 public:
   //// VARIABLES ////
@@ -52,9 +52,9 @@ public:
   int length;
 
   //// CONSTRUCTORS ////
-  Tuple();
-  Tuple(Tuple<K> *t);
-  Tuple(std::initializer_list<K> coords);
+  tuple();
+  tuple(tuple<K> *t);
+  tuple(std::initializer_list<K> coords);
 
   //// OPERATORS ////
   K operator()(int i);
@@ -69,32 +69,32 @@ public:
 
 ````C++
 template <typename K>
-class Matrix
+class matrix
 {
 public:
   //// MEMBER VARIABLES ////
   bool isHostSide, T;
   K *host_ptr, *dev_ptr;
-  Tuple<int> shape;
+  tuple<int> shape;
   cudaStream_t stream;
 
   //// STATIC FUNCTIONS ////
-  static void basic_init(Matrix<K> *m, Tuple<int> &s, bool isOnHost);
-  static void empty_init(Matrix<K> *m, Tuple<int> &s, bool isOnHost);
-  static void const_init(Matrix<K> *m, K val, Tuple<int> &s, bool isOnHost);
+  static void basic_init(matrix<K> *m, tuple<int> &s, bool isOnHost);
+  static void empty_init(matrix<K> *m, tuple<int> &s, bool isOnHost);
+  static void const_init(matrix<K> *m, K val, tuple<int> &s, bool isOnHost);
 
-  static void memassert(Matrix<K> *m, int dest);
+  static void memassert(matrix<K> *m, int dest);
 
   //// CONSTRUCTORS ////
-  Matrix(std::initializer_list<int> s);
-  Matrix(Tuple<int> &s);
-  Matrix(K* ptr, bool isHostPtr, Tuple<int> &s);
-  Matrix(K c, bool onHost, Tuple<int> &s);
+  matrix(std::initializer_list<int> s);
+  matrix(tuple<int> &s);
+  matrix(K* ptr, bool isHostPtr, tuple<int> &s);
+  matrix(K c, bool onHost, tuple<int> &s);
 
   //// OPERATORS ////
-  Matrix operator()(std::initializer_list<int> rows, std::initializer_list<int> cols);
-  Matrix operator()(Tuple<int> &rows, Tuple<int> &cols);
-  Matrix operator+(Matrix<K> m);
+  matrix operator()(std::initializer_list<int> rows, std::initializer_list<int> cols);
+  matrix operator()(tuple<int> &rows, tuple<int> &cols);
+  matrix operator+(matrix<K> m);
 };
 ````
 

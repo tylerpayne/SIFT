@@ -2,20 +2,20 @@
 
 namespace chai {
 
-  int IDX2C(Tuple<int> index, Tuple<int> shape)
+  int IDX2C(tuple<int> index, tuple<int> shape)
   {
     return (index.components[1]*shape.components[0])+index.components[0];
   }
 
-  Tuple<int> C2IDX(int i, Tuple<int> shape)
+  tuple<int> C2IDX(int i, tuple<int> shape)
   {
     int y = i/shape.components[0];
     int x = i-(y*shape.components[0]);
-    Tuple<int> retval({x,y});
+    tuple<int> retval({x,y});
     return retval;
   }
 
-  void make_launch_parameters(Tuple<int> shape, int dim, dim3 *bdim, dim3 *gdim)
+  void make_launch_parameters(tuple<int> shape, int dim, dim3 *bdim, dim3 *gdim)
   {
     if (dim == 1)
     {

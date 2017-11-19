@@ -1,5 +1,5 @@
 # chai
-chai is a no-frills CUDA accelerated matrix library written in C++11.
+chai is a C++ matrix library accelerated by CUDA. 
 
 # usage
 a basic example:

@@ -1,32 +1,166 @@
-#ifndef _MATRIX_H_
-#define _MATRIX_H_
 
-#include <core.h>
+namespace chai {
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+  template<typename K>
+  void Matrix<K>::basic_init(Matrix<K> *m, Tuple<int> &s, bool isOnHost)
+  {
+    m->shape = s;
+    m->isHostSide = true;
+  }
 
-typedef struct Matrix Matrix;
-typedef struct CMatrix CMatrix;
+  template<typename K>
+  void Matrix<K>::empty_init(Matrix<K> *m, Tuple<int> &s, bool isOnHost)
+  {
+    basic_init(m,s,true);
+    if (m->isHostSide)
+    {
+      size_t sz = sizeof(K)*m->shape.prod();
+      m->host_ptr = (K*)malloc(sz);
+      memset((void *)(m->host_ptr),0,sz);
+      m->dev_ptr = NULL;
+    } else
+    {
+      size_t sz = sizeof(K)*m->shape.prod();
+      cudaMalloc((void**)&(m->dev_ptr),sz);
+      cudaMemset((void*)(m->dev_ptr),0,sz);
+      m->host_ptr = NULL;
+    }
+  }
 
-struct Matrix
-{
-  BOOL isHostSide, T;
-  float *host_ptr, *dev_ptr;
-  Shape shape;
-};
+  template<typename K>
+  Matrix<K>::Matrix(Tuple<int> &s)
+  {
+    empty_init(this,s,true);
+    printf("returning matrix\n");
+  }
 
-struct CMatrix
-{
-  BOOL isHostSide, T;
-  __complex__ float *host_ptr, *dev_ptr;
-  Shape shape;
-};
+  template<typename K>
+  Matrix<K>::Matrix(std::initializer_list<int> s)
+  {
+    Tuple<int> t(s);
+    empty_init(this,t,true);
+  }
 
-#include <matrix_funcs.h>
+  template<typename K>
+  Matrix<K>::Matrix(K* ptr, bool isHostPtr, Tuple<int> &s)
+  {
+    basic_init(s,isHostPtr);
+    if (isHostPtr)
+    {
+      this->host_ptr = ptr;
+      this->dev_ptr = NULL;
+    } else
+    {
+      this->dev_ptr = ptr;
+      this->host_ptr = NULL;
+    }
+  }
 
-#ifdef __cplusplus
+  template<typename K>
+  Matrix<K>::Matrix(K c, bool onHost, Tuple<int> &s)
+  {
+    empty_init(s,onHost);
+    if (onHost)
+    {
+      K *tmp_ptr = this->host_ptr;
+      for (int i = 0; i < this->shape.prod(); i++)
+      {
+        *tmp_ptr = c;
+        tmp_ptr++;
+      }
+    } else
+    {
+      //CUDA FILL KERNEL
+    }
+  }
+
+  template <typename K>
+  Matrix<K>::~Matrix()
+  {
+    if (this->isHostSide)
+    {
+      free(this->host_ptr);
+    } else
+    {
+      cuda::safe_call<cudaError_t>(cudaFree(this->dev_ptr));
+    }
+    this->host_ptr = NULL;
+    this->dev_ptr = NULL;
+  }
+
+  template <typename K>
+  Matrix<K> Matrix<K>::operator()(std::initializer_list<int> rows, std::initializer_list<int> cols)
+  {
+    Tuple<int> r(rows);
+    Tuple<int> c(cols);
+    return (*this)(r,c);
+  }
+
+  template <typename K>
+  Matrix<K> Matrix<K>::operator()(Tuple<int> &rows, Tuple<int> &cols)
+  {
+    Matrix ret({rows.length, cols.length});
+    //COPY!
+    if (this->isHostSide)
+    {
+
+    } else
+    {
+
+    }
+    return ret;
+  }
+
+  template <typename K>
+  Matrix<K> Matrix<K>::operator+(Matrix<K> m)
+  {
+    memassert(this,DEVICE);
+    memassert(m,DEVICE);
+
+    Matrix<K> ret(this->shape);
+
+    memassert(ret,DEVICE);
+
+    dim3 bdim,gdim;
+    make_launch_parameters(this->shape,1,&bdim,&gdim);
+    cuda::add_kernel<K><<<gdim,bdim,0,stream>>>(this->dev_ptr,m.dev_ptr,ret.dev_ptr,this->shape);
+    return ret;
+  }
+
+/*
+
+  // ########## //
+  // OPERATIONS //
+  // ########### //
+
+
+  //############//
+  // DESTRUCTOR //
+  //############//
+
+  extern cudaStream_t _cudaStream;
+  template<typename K>
+  void Matrix<K>::memassert(int dest)
+  {
+    if (this->isHostSide != dest)
+    {
+      size_t size = sizeof(K)*this->shape.prod();
+      if (dest == DEVICE)
+      {
+        K *new_dev_ptr;
+        cudaMalloc((void**)&(new_dev_ptr),size);
+        cudaMemcpyAsync(dev_ptr,this->host_ptr,size,cudaMemcpyHostToDevice,_cudaStream);
+        this->dev_ptr = dev_ptr;
+        this->isHostSide = false;
+      }
+      else if (dest == HOST)
+      {
+        cudaMemcpyAsync(this->host_ptr,this->dev_ptr,size,cudaMemcpyDeviceToHost,_cudaStream);
+        cudaFree(this->dev_ptr);
+        this->dev_ptr = NULL;
+        this->isHostSide = true;
+      }
+    }
+  }
+*/
 }
-#endif
-#endif

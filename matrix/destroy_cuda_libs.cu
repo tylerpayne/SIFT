@@ -1,24 +1,23 @@
-#include <matrix.h>
+#include <chai.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-extern cublasHandle_t _cublasHandle;
-extern curandGenerator_t _curandGenerator;
-
-int destroy_cuda_libs()
+namespace chai
 {
-  //cublas
-  cublas_safe_call(cublasDestroy(_cublasHandle));
+  namespace cuda
+  {
+    extern void cublas_safe_call(cublasStatus_t err);
+    extern void curand_safe_call(curandStatus_t err);
 
-  //curand
-  curand_safe_call(curandDestroyGenerator(_curandGenerator));
+    extern cublasHandle_t _cublasHandle;
+    extern curandGenerator_t _curandGenerator;
 
-  return 0;
+    void destroy_cuda_libs()
+    {
+      //cublas
+      cublas_safe_call(cublasDestroy(_cublasHandle));
+
+      //curand
+      curand_safe_call(curandDestroyGenerator(_curandGenerator));
+    }
+
+  }
 }
-
-
-#ifdef __cplusplus
-}
-#endif

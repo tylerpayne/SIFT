@@ -1,40 +1,38 @@
-#include <matrix.h>
+#include <chai.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-cudaStream_t _cudaStream;
-cublasHandle_t _cublasHandle;
-curandGenerator_t _curandGenerator;
-
-int init_cuda_libs()
+namespace chai
 {
+  namespace cuda
+  {
+    extern void cublas_safe_call(cublasStatus_t err);
+    extern void curand_safe_call(curandStatus_t err);
 
-  _cudaStream = 0;
+    cudaStream_t _cudaStream;
+    cublasHandle_t _cublasHandle;
+    curandGenerator_t _curandGenerator;
 
-  //cublas
-  cublas_safe_call(
-    cublasCreate(&_cublasHandle)
-  );
+    void init_cuda_libs()
+    {
 
-  //curand
-  curand_safe_call(
-    curandCreateGenerator(
-      &_curandGenerator, CURAND_RNG_PSEUDO_DEFAULT
-    )
-  );
+      _cudaStream = 0;
 
-  curand_safe_call(
-    curandSetPseudoRandomGeneratorSeed(
-      _curandGenerator, 1234ULL
-    )
-  );
+      //cublas
+      cublas_safe_call(
+        cublasCreate(&_cublasHandle)
+      );
 
-  return 0;
+      //curand
+      curand_safe_call(
+        curandCreateGenerator(
+          &_curandGenerator, CURAND_RNG_PSEUDO_DEFAULT
+        )
+      );
+
+      curand_safe_call(
+        curandSetPseudoRandomGeneratorSeed(
+          _curandGenerator, 1234ULL
+        )
+      );
+    }
+  }
 }
-
-
-#ifdef __cplusplus
-}
-#endif

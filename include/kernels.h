@@ -8,8 +8,8 @@ namespace chai
     } int_tuple;
 
     __device__ int tuple_product(int_tuple shape);
-    __device__ void C2IDX_kernel(int i, int shape[2], int *r, int *c);
-    __device__ int IDX2C_kernel(int index[2], int shape[2]);
+    __device__ void c2idx_kernel(int i, int shape[2], int *r, int *c);
+    __device__ int idx2c_kernel(int index[2], int shape[2]);
 
     // ARITHMETIC
     template<typename K>

@@ -2,12 +2,12 @@
 
 namespace chai {
 
-  int IDX2C(tuple<int> index, tuple<int> shape)
+  int idx2c(tuple<int> index, tuple<int> shape)
   {
     return (index.components[1]*shape.components[0])+index.components[0];
   }
 
-  tuple<int> C2IDX(int i, tuple<int> shape)
+  tuple<int> c2idx(int i, tuple<int> shape)
   {
     int y = i/shape.components[0];
     int x = i-(y*shape.components[0]);

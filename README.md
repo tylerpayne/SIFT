@@ -31,6 +31,7 @@ namespace chai
 {
   class tuple;
   class matrix;
+  ...
   namespace cuda
   {
     void init_cuda_libs();

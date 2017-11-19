@@ -94,12 +94,12 @@ namespace chai
     void curand_safe_call(curandStatus_t err);
 
     __device__ int tuple_product(tuple<int> shape);
-    __device__ void C2IDX_kernel(int i, int shape[2], int *r, int *c);
-    __device__ int IDX2C_kernel(int index[2], int shape[2]);
+    __device__ void c2idx_kernel(int i, int shape[2], int *r, int *c);
+    __device__ int idx2c_kernel(int index[2], int shape[2]);
   }
 
-  int IDX2C(tuple<int> index, tuple<int> shape);
-  tuple<int> C2IDX(int i, tuple<int> shape);
+  int idx2c(tuple<int> index, tuple<int> shape);
+  tuple<int> c2idx(int i, tuple<int> shape);
   void make_launch_parameters(tuple<int> shape, int dim, dim3 *bdim, dim3 *gdim);
 }
 

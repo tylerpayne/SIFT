@@ -1,16 +1,24 @@
 #include <chai.h>
 
+using namespace chai;
 
 int main(int argc, char** argv)
 {
-  chai::cuda::init_cuda_libs();
-  printf("1!\n");
-  chai::tuple<int> t({3,3});
-  printf("2!\n");
-  chai::matrix<int> m(t);
-  printf("3!\n");
-  chai::matrix<int> n = m({2},{1,3});
-  printf("4!\n");
-  chai::cuda::destroy_cuda_libs();
+  cuda::init_cuda_libs();
+
+
+  tuple<int> t1({1,2,3,4,5});
+  tuple<int> t2({1,2,3,4,5});
+
+  int *ones = (int*)malloc(sizeof(int)*9);
+  memset(ones,0,sizeof(int)*9);
+  matrix<int> m1(ones,true,{3,3});
+  matrix<int> m2(ones,true,{3,3});
+
+  matrix<int> m3 = m1+m2;
+
+  m3.print();
+
+  cuda::destroy_cuda_libs();
   return 0;
 }

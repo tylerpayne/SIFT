@@ -12,7 +12,7 @@ OUTPUT=out
 .PHONY: all compile link clean clean_all
 
 all:
-	$(MAKE) compile CURRENT=matrix
+	$(MAKE) compile CURRENT=src
 	$(MAKE) link CURRENT=matrix
 	#$(MAKE) clean
 	#$(MAKE) compile CURRENT=graph
@@ -23,7 +23,7 @@ compile:
 	$(CC) --compiler-options=-fPIC -std=c++11 --device-c -I./include $(shell ls $(CURRENT)/*.cpp) $(shell ls $(CURRENT)/*.cu) -lnppc -lcublas -lcurand -lnppi
 
 link:
-	$(CC) -shared --compiler-options=-fPIC -std=c++11 -I./src $(shell ls *.o) -o bin/lib$(CURRENT).so
+	$(CC) -shared --compiler-options=-fPIC -std=c++11 -I./src $(shell ls *.o) -o bin/libchai.so
 
 clean_all:
 	rm bin/*

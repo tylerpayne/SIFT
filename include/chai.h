@@ -26,6 +26,11 @@
 
 namespace chai
 {
+  typedef struct int_tuple
+  {
+    int *components, length;
+  } int_tuple;
+
   template <typename K>
   class tuple
   {
@@ -33,23 +38,26 @@ namespace chai
     K *components;
     int length;
     tuple();
-    tuple(tuple<K> *t);
     tuple(std::initializer_list<K> coords);
 
     K operator()(int i);
+    bool operator==(tuple<K> t);
 
     K prod();
     K norm();
     K norm(int l);
+    operator int_tuple();
   };
 
   template<typename K>
-  class Rect
+  class rect
   {
   public:
     tuple<K> origin;
     tuple<int> shape;
-    Rect(tuple<K> p, tuple<int> s) {origin = p; shape = s;}
+    rect(tuple<K> p, tuple<int> s) {origin = p; shape = s;}
+
+    K area();
   };
 
   template <typename K>
@@ -61,22 +69,35 @@ namespace chai
     tuple<int> shape;
     cudaStream_t stream;
 
-    static void basic_init(matrix<K> *m, tuple<int> &s, bool isOnHost);
-    static void empty_init(matrix<K> *m, tuple<int> &s, bool isOnHost);
-    static void const_init(matrix<K> *m, K val, tuple<int> &s, bool isOnHost);
+    static void basic_init(matrix<K> &m, tuple<int> s, bool isOnHost);
+    static void empty_init(matrix<K> &m, tuple<int> s, bool isOnHost);
+    static void const_init(matrix<K> &m, K val, tuple<int> s, bool isOnHost);
 
-    static void memassert(matrix<K> *m, int dest);
+    static void memassert(matrix<K> &m, int dest);
 
     matrix(std::initializer_list<int> s);
-    matrix(tuple<int> &s);
-    matrix(K* ptr, bool isHostPtr, tuple<int> &s);
-    matrix(K c, bool onHost, tuple<int> &s);
+    matrix(tuple<int> s);
 
+    matrix(K* ptr, bool isHostPtr, std::initializer_list<int> s);
+    matrix(K* ptr, bool isHostPtr, tuple<int> s);
+
+    matrix(K c, bool onHost, std::initializer_list<int> s);
+    matrix(K c, bool onHost, tuple<int> s);
+
+    K operator()(tuple<int> index);
+    K operator()(std::initializer_list<int> index);
     matrix operator()(std::initializer_list<int> rows, std::initializer_list<int> cols);
-    matrix operator()(tuple<int> &rows, tuple<int> &cols);
-    matrix operator+(matrix<K> m);
+    matrix operator()(tuple<int> rows, tuple<int> cols);
+
+    matrix operator+(matrix<K> &m);
+    matrix operator+(K c);
+
+    matrix operator-(matrix<K> &m);
+    matrix operator-(K c);
 
     ~matrix();
+
+    void print();
   };
 
   namespace cuda

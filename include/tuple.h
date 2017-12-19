@@ -1,20 +1,15 @@
 
 namespace chai
 {
+    //////////////////
+    // CONSTRUCTORS //
+    //////////////////
+
     template <typename K>
     tuple<K>::tuple()
     {
       this->length=-1;
       this->components=NULL;
-    }
-
-    template <typename K>
-    tuple<K>::tuple(tuple<K> *t)
-    {
-      this->length = t->length;
-      size_t size = sizeof(K)*this->length;
-      this->components = static_cast<K*>(malloc(size));
-      memcpy((void *)(this->components), t->components, size);
     }
 
     template<typename K>
@@ -25,6 +20,10 @@ namespace chai
       this->components = static_cast<K*>(malloc(size));
       memcpy((void *)(this->components), coords.begin(), size);
     }
+
+    ///////////////
+    // FUNCTIONS //
+    //////////////
 
     template <typename K>
     K tuple<K>::prod()
@@ -59,9 +58,33 @@ namespace chai
       return pow(retval,1/(K)l);
     }
 
+    ///////////////
+    // OPERATORS //
+    ///////////////
+
     template <typename K>
     K tuple<K>::operator()(int i)
     {
         return this->components[i];
+    }
+
+    template <typename K>
+    bool tuple<K>::operator==(tuple<K> t)
+    {
+        if (t.length != this->length) return false;
+        for (int i = 0; i < this->length; i++)
+        {
+          if ((*this)(i) != t(i)) return false;
+        }
+        return true;
+    }
+
+    template<typename K>
+    tuple<K>::operator int_tuple()
+    {
+      int_tuple ret;
+      ret.length = this->length;
+      ret.components = this->components;
+      return ret;
     }
 }

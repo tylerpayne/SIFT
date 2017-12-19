@@ -2,10 +2,6 @@ namespace chai
 {
   namespace cuda
   {
-    typedef struct int_tuple
-    {
-      int *components, length;
-    } int_tuple;
 
     __device__ int tuple_product(int_tuple shape);
     __device__ void c2idx_kernel(int i, int shape[2], int *r, int *c);
@@ -52,5 +48,13 @@ namespace chai
 
     template<typename K>
     __global__ void pow_kernel(K *a, K b, K *c, int_tuple shape);
+
+    ///////////////////////
+    // MATRIX OPERATIONS //
+    //////////////////////
+
+    template<typename K>
+    matrix<K> dot_kernel(matrix<K> &a, matrix<K> &b);
+
   }
 }

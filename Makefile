@@ -32,4 +32,4 @@ clean:
 	rm *.o
 
 app:
-	$(CC) -std=c++11 -Iinclude $(INPUT) -o $(OUTPUT) -Lbin -lmatrix -lcublas -lnppc -lnppi -lcurand
+	$(CC) -std=c++11 -Iinclude $(INPUT) -o $(OUTPUT) -Lbin -lchai -lcublas -lnppc -lnppi -lcurand
